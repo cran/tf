@@ -1,6 +1,6 @@
 Package: tf
 Title: S3 Classes and Methods for Tidy Functional Data
-Version: 0.3.2
+Version: 0.3.3
 Authors@R: c(
     person("Fabian", "Scheipl", email = "fabian.scheipl@googlemail.com", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0001-8172-3603")),
@@ -45,7 +45,7 @@ Collate: 'approx.R' 'bibentries.R' 'brackets.R' 'calculus.R'
         'vctrs-cast.R' 'vctrs-ptype2.R' 'where.R' 'zoom.R'
 Config/testthat/edition: 3
 NeedsCompilation: no
-Packaged: 2024-03-15 13:18:58 UTC; fabians
+Packaged: 2024-03-27 10:45:38 UTC; fabians
 Author: Fabian Scheipl [aut, cre] (<https://orcid.org/0000-0001-8172-3603>),
   Jeff Goldsmith [aut],
   Julia Wrobel [ctb] (<https://orcid.org/0000-0001-6783-1421>),
@@ -56,4 +56,4 @@ Author: Fabian Scheipl [aut, cre] (<https://orcid.org/0000-0001-8172-3603>),
   Chen Meng [ctb] (mogsa author)
 Maintainer: Fabian Scheipl <fabian.scheipl@googlemail.com>
 Repository: CRAN
-Date/Publication: 2024-03-18 17:30:02 UTC
+Date/Publication: 2024-03-28 15:50:02 UTC
