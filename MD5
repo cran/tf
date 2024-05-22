@@ -1,6 +1,6 @@
-0edfef2f04d3b98670351cc79ed8c7d3 *DESCRIPTION
+e1fa923d6edafd45fb79c610edfceed7 *DESCRIPTION
 acd2be3507d84e62a9f9cd1a0310fddb *NAMESPACE
-a45db7b1a702b41285695d0dc51dd7c9 *NEWS.md
+f07a540d8c85510ede42c3933006b77c *NEWS.md
 b8e9065fe4ee810c6b27fd9aecca790b *R/approx.R
 1e215725b5918ebee9efa2669b155757 *R/bibentries.R
 ed83b695a7f5ec6611b95f2d36bbf838 *R/brackets.R
@@ -9,7 +9,7 @@ ed83b695a7f5ec6611b95f2d36bbf838 *R/brackets.R
 b14337a5400f546ac21a7e8d721e73b3 *R/convert.R
 b2fcfb2674ee8d7df0d9a2186a778f55 *R/depth.R
 03748f66097bb165fa49ccd957153cf3 *R/evaluate.R
-aee59cc3600135599ceda859b2af0fad *R/fwise.R
+8a5c4c1674d1401ff9e8b04a035b3bd9 *R/fwise.R
 e0ed169db9de2dd827686f0ec592a628 *R/globals.R
 fe834b7270d224364e101297f9d80a47 *R/graphics.R
 708c56152d03bd262cc6dda912d0f999 *R/interpolate.R
@@ -35,7 +35,7 @@ fd7dec2c1a815d0e7b39fc274c836b67 *R/utils.R
 3ede924c2796ba71be3dee301e2ef3e3 *R/vctrs-ptype2.R
 5c398818172fad5e6495c6a2b8570ec4 *R/where.R
 e1dbe77dfc38bb143860eff9dc851620 *R/zoom.R
-2d34d34fe0088c61d1692ebc291cdca4 *README.md
+fb8f5ce5e2952de7d3c4314517b9ec5f *README.md
 c6561c4e8343209f5d8b5c43ef5a7a5a *inst/testdata/make-test-data.R
 57dda5450284a39aac0017b681e96cf7 *man/converters.Rd
 cfae2b6670bb08e933dd0a504237dec8 *man/ensure_list.Rd
@@ -74,7 +74,7 @@ c052228505c33a34e9ed7b86469c333b *man/unique_id.Rd
 5a7345a96a13977019fa5a6bed07dbb1 *tests/testthat/test-depth.R
 670de80705d1f5da8bc5304650e02308 *tests/testthat/test-evaluate.R
 183e605a8a74345c4bf8d78b47391fd3 *tests/testthat/test-evaluator.R
-d4a70f5a34074a95934e973536b5856f *tests/testthat/test-fwise.R
+a7a74f3000a90fce92bb5f48d091efa4 *tests/testthat/test-fwise.R
 fe51de5c06a646ddaa723ed152dc4026 *tests/testthat/test-interpolate-tfb.R
 18690faa1b1b4750b91d7651f41f586a *tests/testthat/test-names.R
 2abb90ca8f03025d37b0ce54ca47e5a1 *tests/testthat/test-rebase.R
