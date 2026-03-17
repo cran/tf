@@ -2,10 +2,27 @@
 #'
 #' A bunch of methods & utilities that do what they say: get or set the
 #' respective attributes of a `tf`-object.
-#' @param f an `tf` object
-#' @param x an `tf` object
+#'
+#' @param f an `tf` object.
+#' @param x an `tf` object.
 #' @returns either the respective attribute or, for setters (assignment functions),
-#'  the input object with modified properties.
+#'   the input object with modified properties.
+#' @examples
+#' x <- tf_rgp(3)
+#' tf_arg(x)
+#' tf_evaluations(x)
+#' tf_count(x)
+#' tf_domain(x)
+#' tf_evaluator(x)
+#' tf_evaluate(x, 0.25)
+#' tf_evaluator(x) <- tf_approx_none
+#' tf_evaluate(x, 0.25)
+#' c(is_tf(x), is_tfd(x), is_reg(x), is_irreg(x))
+#'
+#' xb <- tfb(x, k = 4, penalized = FALSE, verbose = FALSE)
+#' tf_basis(xb)
+#' tf_basis(xb)(c(0, .1, .2))
+#' c(is_tfb(xb), is_tfb_spline(xb), is_tfb_fpc(xb))
 #' @rdname tfmethods
 #' @family tidyfun utility functions
 #' @export
@@ -15,7 +32,8 @@ tf_arg <- function(f) UseMethod("tf_arg")
 tf_arg.default <- function(f) .NotYetImplemented()
 
 #' @export
-tf_arg.tfd_irreg <- function(f) map(f, "arg")
+tf_arg.tfd_irreg <- function(f)
+  map(f, \(x) if (is.null(x)) numeric(0) else x$arg)
 
 #' @export
 tf_arg.tfd_reg <- function(f) attr(f, "arg")[[1]]
@@ -34,21 +52,25 @@ tf_evaluations.default <- function(f) .NotYetImplemented()
 
 #' @export
 tf_evaluations.tfd_reg <- function(f) {
-  f_names <- names(f)
-  attributes(f) <- NULL
-  setNames(f, f_names)
+  vec_data(f)
 }
 
 #' @export
 tf_evaluations.tfd_irreg <- function(f) {
-  map(f, "value")
+  map(f, \(x) if (is.null(x)) NULL else x$value)
 }
 
 #' @export
 tf_evaluations.tfb <- function(f) {
-  evals <- map(f, \(x) drop(attr(f, "basis_matrix") %*% x) |> unname())
-  if (!inherits(f, "tfb_fpc")) {
-    evals <- map(evals, attr(f, "family")$linkinv)
+  evals <- map(f, \(x) {
+    if (is.null(x)) return(NULL)
+    drop(attr(f, "basis_matrix") %*% x) |> unname()
+  })
+  if (!is_tfb_fpc(f) && vec_size(f) > 0) {
+    evals <- map(evals, \(x) {
+      if (is.null(x)) return(NULL)
+      attr(f, "family")$linkinv(x)
+    })
   }
   evals
 }
@@ -77,19 +99,25 @@ tf_count.tfd_reg <- function(f) length(tf_arg(f))
 #' @rdname tfmethods
 #' @export
 tf_domain <- function(f) {
-  assert_class(f, "tf")
+  assert_tf(f)
   attr(f, "domain")
 }
 
 #' @rdname tfmethods
 #' @export
 `tf_domain<-` <- function(x, value) {
-  assert_class(x, "tf")
-  assert_numeric(value, any.missing = FALSE, len = 2, unique = TRUE, sorted = TRUE)
-  warning(c(
-    "This changes the functions' domain but not their argument values!\n",
-    "To restrict functions to a part of their domain, use tf_zoom."
-  ), call. = FALSE)
+  assert_tf(x)
+  assert_numeric(
+    value,
+    any.missing = FALSE,
+    len = 2,
+    unique = TRUE,
+    sorted = TRUE
+  )
+  cli::cli_warn(c(
+    x = "This changes the functions' domain but not their argument values!",
+    i = "To restrict functions to a part of their domain, use {.fn tf_zoom}."
+  ))
   attr(x, "domain") <- value
   x
 }
@@ -99,13 +127,8 @@ tf_domain <- function(f) {
 #' @rdname tfmethods
 #' @export
 tf_evaluator <- function(f) {
-  assert_class(f, "tfd")
+  assert_tfd(f)
   attr(f, "evaluator")
-}
-
-tf_evaluator_expr <- function(f) {
-  assert_class(f, "tfd")
-  attr(f, "evaluator_name") |> as.symbol()
 }
 
 #' @rdname tfmethods
@@ -119,17 +142,13 @@ tf_evaluator_expr <- function(f) {
 #' @export
 `tf_evaluator<-` <- function(x, value) {
   value <- if (is.function(value)) {
-    deparse(substitute(value))
+    deparse1(substitute(value))
   } else {
-    quo_name(enexpr(value))
+    as_name(enexpr(value))
   }
-  stopifnot(is_tfd(x))
   evaluator <- get(value, mode = "function", envir = parent.frame())
-  assert_class(x, "tfd")
-  assert_set_equal(
-    names(formals(evaluator)),
-    c("x", "arg", "evaluations")
-  )
+  assert_tfd(x)
+  assert_set_equal(formalArgs(evaluator), c("x", "arg", "evaluations"))
   attr(x, "evaluator_name") <- value
   attr(x, "evaluator") <- evaluator
   x
@@ -143,7 +162,7 @@ tf_evaluator_expr <- function(f) {
 #'    (columns) evaluated on `tf_arg(f)` (rows).
 #' @export
 tf_basis <- function(f, as_tfd = FALSE) {
-  assert_class(f, "tfb")
+  assert_tfb(f)
   basis <- attr(f, "basis")
   if (!as_tfd) {
     return(basis)
@@ -159,10 +178,10 @@ tf_basis <- function(f, as_tfd = FALSE) {
 #' @rdname tfmethods
 #' @export
 `tf_arg<-` <- function(x, value) {
-  warning(c(
-    "This changes arguments (and resolution) without changing the corresponding function values!\n",
-    "In order to re-evaluate functions on a new grid, use tf_interpolate."
-  ), call. = FALSE)
+  cli::cli_warn(c(
+    x = "This changes arguments without changing the corresponding function values!",
+    i = "In order to re-evaluate functions on a new grid, use {.fn tf_interpolate}."
+  ))
   UseMethod("tf_arg<-")
 }
 
@@ -179,13 +198,15 @@ tf_basis <- function(f, as_tfd = FALSE) {
 #' @export
 `tf_arg<-.tfd_reg` <- function(x, value) {
   assert_arg(value, x, check_unique = FALSE)
-  if (!(length(unlist(value)) == length(tf_arg(x)))) {
-    stop("length(arg) not the same as original -- use tf_interpolate.",
-         call. = FALSE)
+  if (length(unlist(value, use.names = FALSE)) != length(tf_arg(x))) {
+    cli::cli_abort(
+      "{.code length(arg)} not the same as original -- use {.fn tf_interpolate}."
+    )
   }
   if (length(ensure_list(value)) != 1) {
-    stop(paste("can't assign irregular argument list to ", class(x)[1]),
-         call. = FALSE)
+    cli::cli_abort(
+      "Can't assign irregular argument list to {.cls {class(x)[1]}}."
+    )
   }
 
   attr(x, "arg") <- ensure_list(value)
@@ -221,14 +242,14 @@ rev.tf <- function(x) {
 #' @rdname tfmethods
 #' @export
 is.na.tf <- function(x) {
-  map_lgl(unclass(x), \(x) is.na(x)[1])
+  map_lgl(unclass(x), \(x) is.null(x) || is.na(x)[1])
 }
+
 #' @rdname tfmethods
 #' @export
 is.na.tfd_irreg <- function(x) {
-  map_lgl(unclass(x), \(x) is.na(x$value[1]))
+  map_lgl(unclass(x), \(x) is.null(x) || is.null(x$value) || is.na(x$value[1]))
 }
-
 
 #-------------------------------------------------------------------------------
 
@@ -255,7 +276,6 @@ is_irreg <- function(x) inherits(x, "tfd_irreg")
 #' @rdname tfmethods
 #' @export
 is_tfd_irreg <- is_irreg
-
 
 #' @rdname tfmethods
 #' @export

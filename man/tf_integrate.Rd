@@ -13,7 +13,7 @@ tf_integrate(f, arg, lower, upper, ...)
 
 \method{tf_integrate}{tfd}(
   f,
-  arg,
+  arg = tf_arg(f),
   lower = tf_domain(f)[1],
   upper = tf_domain(f)[2],
   definite = TRUE,
@@ -22,7 +22,7 @@ tf_integrate(f, arg, lower, upper, ...)
 
 \method{tf_integrate}{tfb}(
   f,
-  arg,
+  arg = tf_arg(f),
   lower = tf_domain(f)[1],
   upper = tf_domain(f)[2],
   definite = TRUE,
@@ -34,17 +34,17 @@ tf_integrate(f, arg, lower, upper, ...)
 
 \item{arg}{(optional) grid to use for the quadrature.}
 
-\item{lower}{lower limits of the integration range. For \code{definite=TRUE}, this
+\item{lower}{lower limits of the integration range. For \code{definite = TRUE}, this
 can be a vector of the same length as \code{f}.}
 
 \item{upper}{upper limits of the integration range (but see \code{definite} arg /
-Description). For \code{definite=TRUE}, this can be a vector of the same length
+description). For \code{definite = TRUE}, this can be a vector of the same length
 as \code{f}.}
 
 \item{...}{not used}
 
 \item{definite}{should the definite integral  be returned (default) or the
-antiderivative. See Description.}
+antiderivative. See description.}
 }
 \value{
 For \code{definite = TRUE}, the definite integrals of the functions in
@@ -58,6 +58,13 @@ By default the scalar definite integral
 alternatively for \code{definite = FALSE} the \emph{anti-derivative} on
 \verb{[lower, upper]}, e.g. a \code{tfd} or \code{tfb} object representing \eqn{F(t) \approx
 \int^{t}_{lower}f(s)ds}, for \eqn{t \in}\verb{[lower, upper]}, is returned.
+}
+\examples{
+arg <- seq(0, 1, length.out = 11)
+x <- tfd(rbind(arg, arg^2), arg = arg)
+tf_integrate(x)
+anti <- tf_integrate(x, definite = FALSE)
+tf_arg(anti)
 }
 \seealso{
 Other tidyfun calculus functions: 

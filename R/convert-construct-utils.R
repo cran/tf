@@ -3,14 +3,15 @@
 # replaces functionality of tf_unnest.tf
 # turn a tf object into a data.frame evaluated on arg with cols id-arg-value
 tf_2_df <- function(tf, arg, interpolate = TRUE, ...) {
-  assert_class(tf, "tf")
+  assert_tf(tf)
   if (missing(arg)) {
     arg <- tf_arg(tf)
   }
   arg <- ensure_list(arg)
   assert_arg(arg, tf)
 
-  tmp <- do.call(rbind,
+  tmp <- do.call(
+    rbind,
     args = tf[, arg, matrix = FALSE, interpolate = interpolate]
   )
   n_evals <- lengths(arg)
@@ -25,14 +26,12 @@ tf_2_df <- function(tf, arg, interpolate = TRUE, ...) {
   tmp[, c("id", "arg", "value")]
 }
 
-
 # from refund
-#' @importFrom stats complete.cases filter
 df_2_mat <- function(data, binning = FALSE, maxbins = 1000) {
   data <- data[complete.cases(data), ]
-  nobs <- length(unique(data$id))
+  nobs <- vec_unique_count(data$id)
   newid <- as.numeric(as.factor(data$id))
-  bins <- sort(unique(data$arg))
+  bins <- sort_unique(data$arg)
   if (binning && (length(bins) > maxbins)) {
     binvalues <- seq(
       (1 - 0.001 * sign(bins[1])) * bins[1],
@@ -44,7 +43,8 @@ df_2_mat <- function(data, binning = FALSE, maxbins = 1000) {
   } else {
     binvalues <- bins
     bins <- c(
-      (1 - 0.001 * sign(bins[1])) * bins[1], bins[-length(bins)],
+      (1 - 0.001 * sign(bins[1])) * bins[1],
+      bins[-length(bins)],
       (1 + 0.001 * sign(bins[length(bins)])) * bins[length(bins)]
     )
     if (bins[1] == 0) {
@@ -59,7 +59,7 @@ df_2_mat <- function(data, binning = FALSE, maxbins = 1000) {
   colnames(data_mat) <- binvalues
   attr(data_mat, "arg") <- binvalues
   data_mat[cbind(newid, as.numeric(newindex))] <- data$value
-  return(data_mat)
+  data_mat
 }
 
 #-------------------------------------------------------------------------------
@@ -67,27 +67,44 @@ df_2_mat <- function(data, binning = FALSE, maxbins = 1000) {
 
 df_2_df <- function(data, id = 1, arg = 2, value = 3) {
   data <- na.omit(data[, c(id, arg, value)])
-  stopifnot(
-    nrow(data) > 0,
-    is.numeric(data[[arg]]),
-    is.numeric(data[[value]])
-  )
+  assert_data_frame(data, min.rows = 1)
+  assert_numeric(data[[arg]])
+  assert_numeric(data[[value]])
   colnames(data) <- c("id", "arg", "value")
   data
 }
 
 mat_2_df <- function(x, arg) {
-  stopifnot(
-    is.numeric(x), is.matrix(x),
-    is.numeric(arg), length(arg) == ncol(x)
-  )
+  assert_matrix(x)
+  assert_numeric(arg)
+  assert_true(length(arg) == ncol(x))
 
-  id <- unique_id(rownames(x)) %||% seq_len(dim(x)[1])
+  id <- unique_id(rownames(x)) %||% seq_len(nrow(x))
   id <- ordered(id, levels = unique(id))
-  df_2_df(data.frame(
+  t_x <- t(x)
+  df_2_df(data_frame0(
     # use t(x) here so that order of vector remains unchanged...
-    id = id[col(t(x))], arg = arg[row(t(x))],
-    value = as.vector(t(x)),
-    stringsAsFactors = FALSE
+    id = id[col(t_x)],
+    arg = arg[row(t_x)],
+    value = as.vector(t_x)
   ))
+}
+
+#-------------------------------------------------------------------------------
+
+tf_2_fd <- function(x, ..., nbasis = NULL, lambda = 0) {
+  rlang::check_installed("fda")
+
+  domain <- tf_domain(x)
+  arg <- tf_arg(x)
+  y_mat <- t(as.matrix(x))
+  nbasis <- nbasis %||% min(25, round(length(arg) / 4))
+
+  basis <- fda::create.bspline.basis(
+    rangeval = domain,
+    nbasis = nbasis,
+    norder = 4
+  )
+  param <- fda::fdPar(basis, lambda = lambda)
+  fda::smooth.basis(argvals = arg, y = y_mat, fdParobj = param, ...)$fd
 }

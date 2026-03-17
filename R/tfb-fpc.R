@@ -1,28 +1,33 @@
-new_tfb_fpc <- function(data, domain = NULL,
-                       method = NULL, basis_from = NULL, ...) {
+new_tfb_fpc <- function(
+  data,
+  domain = NULL,
+  method = NULL,
+  basis_from = NULL,
+  ...
+) {
   if (all(dim(data) == 0)) {
-    ret <- vctrs::new_vctr(
+    ret <- new_vctr(
       data,
       domain = domain %||% numeric(2),
       arg = numeric(),
       score_variance = numeric(),
-      class = c("tfb_fpc", "tfb", "tf"))
+      class = c("tfb_fpc", "tfb", "tf")
+    )
     return(ret)
   }
   if (!is.null(method) && !is.null(basis_from)) {
-    stop("Can't specify both method *and* basis_from for new_tfb_fpc",
-         call. = FALSE)
+    cli::cli_abort(
+      "Can't specify both {.arg method} {.emph and} {.arg basis_from} for {.fn new_tfb_fpc}."
+    )
   }
-  arg <- mgcv::uniquecombs(data$arg, ordered = TRUE) |> unlist()
+  arg <- uniquecombs(data$arg, ordered = TRUE) |> unlist(use.names = FALSE)
 
   domain <- domain %||% range(arg)
   if (!isTRUE(all.equal(domain, range(arg)))) {
-    warning(
-      "domain for tfb_fpc can't be larger than observed arg-range --",
-      " extrapolating FPCs is a bad idea.\n domain reset to [", min(arg),
-      ",", max(arg), "]",
-      call. = FALSE
-    )
+    cli::cli_warn(c(
+      x = "{.arg domain} for {.cls tfb_fpc} can't be larger than observed arg-range -- extrapolating FPCs is a bad idea.",
+      i = "{.arg domain} reset to [{min(arg)}, {max(arg)}]."
+    ))
     domain <- range(arg)
   }
 
@@ -38,23 +43,26 @@ new_tfb_fpc <- function(data, domain = NULL,
   } else {
     basis_matrix <- tf_basis(basis_from)(arg) |> as.matrix()
     basis_label <- attr(basis_from, "basis_label")
-    score_variance <-  attr(basis_from, "score_variance")
+    score_variance <- attr(basis_from, "score_variance")
     scoring_function <- attr(basis_from, "scoring_function")
 
     # trapezoid integration weights: #TODO generally appropriate or just for wsvd?
     delta <- c(0, diff(arg))
     weights <- 0.5 * c(delta[-1] + head(delta, -1), tail(delta, 1))
-    scores <- scoring_function(df_2_mat(data),
-                               basis_matrix[, -1], basis_matrix[, 1], weights) #!!
+    scores <- scoring_function(
+      df_2_mat(data),
+      basis_matrix[, -1],
+      basis_matrix[, 1],
+      weights
+    ) #!!
   }
-  fpc_basis <- tfd(t(basis_matrix),
-                   arg = arg, domain = domain)
+  fpc_basis <- tfd(t(basis_matrix), arg = arg, domain = domain)
   fpc_constructor <- fpc_wrapper(fpc_basis)
   coef_list <- split(cbind(1, scores), row(cbind(1, scores)))
   names(coef_list) <- levels(as.factor(data$id))
 
-
-  vctrs::new_vctr(coef_list,
+  new_vctr(
+    coef_list,
     domain = domain,
     basis = fpc_constructor,
     basis_label = basis_label,
@@ -83,22 +91,22 @@ new_tfb_fpc <- function(data, domain = NULL,
 #' For the FPC basis, any factorization method that accepts a `data.frame` with
 #' columns `id`, `arg`, `value` containing the functional data and returns a
 #' list with eigenfunctions and FPC scores structured like the return object
-#' of [fpc_wsvd()] can be used for the `method`` argument, see example below.
+#' of [fpc_wsvd()] can be used for the `method` argument, see example below.
 #' Note that the mean function, with a fixed "score" of 1 for all functions,
 #' is used as the first basis function for all FPC bases.
 #'
 #' @export
 #' @param method the function to use that computes eigenfunctions and scores.
 #'   Defaults to [fpc_wsvd()], which is quick and easy but returns completely
-#'   unsmoothed eigenfunctions unlikely to be suited for noisy data. See Details.
+#'   unsmoothed eigenfunctions unlikely to be suited for noisy data. See details.
 #' @param ... arguments to the `method` which computes the
-#'  (regularized/smoothed) FPCA - see e.g. [fpc_wsvd()].
-#'  Unless set by the user, uses proportion of variance explained
-#'  `pve = 0.995` to determine the truncation levels.
+#'   (regularized/smoothed) FPCA - see e.g. [fpc_wsvd()].
+#'   Unless set by the user, uses proportion of variance explained
+#'   `pve = 0.995` to determine the truncation levels.
 #' @inheritParams tfb
 #' @returns an object of class `tfb_fpc`, inheriting from `tfb`.
-#'    The basis used by `tfb_fpc` is a `tfd`-vector containing the estimated
-#'    mean and eigenfunctions.
+#'   The basis used by `tfb_fpc` is a `tfd`-vector containing the estimated
+#'   mean and eigenfunctions.
 #' @seealso [fpc_wsvd()] for FPCA options.
 #' @rdname tfb_fpc
 #' @export
@@ -109,7 +117,7 @@ tfb_fpc <- function(data, ...) UseMethod("tfb_fpc")
 #' @rdname tfb_fpc
 #' @export
 #' @inheritParams tfd.data.frame
-#' @examples
+#' @examplesIf rlang::is_installed("refund")
 #' set.seed(13121)
 #' x <- tf_rgp(25, nugget = .02)
 #' x_pc <- tfb_fpc(x, pve = .9)
@@ -159,17 +167,29 @@ tfb_fpc <- function(data, ...) UseMethod("tfb_fpc")
 #' x_pc <- tfb_fpc(x_df, method = fpca_sc_wrapper)
 #' lines(x_pc, col = 2, lty = 2)
 #' }
-tfb_fpc.data.frame <- function(data, id = 1, arg = 2, value = 3,
-                               domain = NULL, method = fpc_wsvd, ...) {
+tfb_fpc.data.frame <- function(
+  data,
+  id = 1,
+  arg = 2,
+  value = 3,
+  domain = NULL,
+  method = fpc_wsvd,
+  ...
+) {
   data <- df_2_df(data, id, arg, value)
   new_tfb_fpc(data, domain = domain, method = method, ...)
 }
 
 #' @rdname tfb_fpc
 #' @export
-tfb_fpc.matrix <- function(data, arg = NULL, domain = NULL,
-                           method = fpc_wsvd, ...) {
-  arg <- unlist(find_arg(data, arg))
+tfb_fpc.matrix <- function(
+  data,
+  arg = NULL,
+  domain = NULL,
+  method = fpc_wsvd,
+  ...
+) {
+  arg <- unlist(find_arg(data, arg), use.names = FALSE)
   names_data <- rownames(data)
   data <- mat_2_df(data, arg)
   ret <- new_tfb_fpc(data, domain = domain, method = method, ...)
@@ -178,8 +198,13 @@ tfb_fpc.matrix <- function(data, arg = NULL, domain = NULL,
 
 #' @rdname tfb_fpc
 #' @export
-tfb_fpc.numeric <- function(data, arg = NULL, domain = NULL,
-                            method = fpc_wsvd, ...) {
+tfb_fpc.numeric <- function(
+  data,
+  arg = NULL,
+  domain = NULL,
+  method = fpc_wsvd,
+  ...
+) {
   data <- t(as.matrix(data))
   tfb_fpc(data = data, arg = arg, method = method, domain = domain, ...)
 }
@@ -194,7 +219,8 @@ tfb_fpc.tf <- function(data, arg = NULL, method = fpc_wsvd, ...) {
   ret <- tfb_fpc(
     tf_2_df(data, arg = arg),
     method = method,
-    domain = tf_domain(data), ...
+    domain = tf_domain(data),
+    ...
   )
   setNames(ret, names_data)
 }
@@ -202,13 +228,19 @@ tfb_fpc.tf <- function(data, arg = NULL, method = fpc_wsvd, ...) {
 #' @export
 #' @describeIn tfb_fpc convert `tfb`: default method, returning prototype when
 #'   data is NULL
-tfb_fpc.default <- function(data, arg = NULL, domain = NULL, method = fpc_wsvd,
-                            ...) {
+tfb_fpc.default <- function(
+  data,
+  arg = NULL,
+  domain = NULL,
+  method = fpc_wsvd,
+  ...
+) {
   if (!missing(data)) {
-    message("input `data` not recognized class;\nreturning prototype of length 0")
+    cli::cli_inform(
+      "Input {.arg data} not a recognized class; returning prototype of length 0."
+    )
   }
 
-  data <- data.frame()
-  new_tfb_spline(data = data, arg = arg, method = method, domain = domain,
-                 ...)
+  data <- data_frame0()
+  new_tfb_spline(data = data, arg = arg, method = method, domain = domain, ...)
 }

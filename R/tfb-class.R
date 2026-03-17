@@ -21,26 +21,41 @@
 #' @param basis either "`spline`" (see [tfb_spline()], the default) or "`fpc`"
 #'   (see [tfb_fpc()]).
 #'   (`wavelet` not implemented yet)
-#' @param ... further arguments for [tfb_spline()] or [tfb_fpc()]
+#' @param ... further arguments for [tfb_spline()] or [tfb_fpc()].
 #' @returns a `tfb`-object (or a `data.frame`/`matrix` for the conversion
-#'   functions, obviously.)
+#'   functions, obviously).
+#' @examples
+#' arg <- seq(0, 1, length.out = 21)
+#' x <- tfd(rbind(sin(2 * pi * arg), cos(2 * pi * arg)), arg = arg)
+#' xb <- tfb(x, k = 8, penalized = FALSE)
+#' xb
+#'
+#' as.tfb(x, basis = "spline", k = 8)
 #' @rdname tfb
 #' @family tfb-class
 #' @export
-tfb <- function(data = data.frame(), basis = c("spline", "fpc", "wavelet"), ...) {
+tfb <- function(
+  data = data_frame0(),
+  basis = c("spline", "fpc", "wavelet"),
+  ...
+) {
   # nocov start
   basis <- match.arg(basis)
-  if (vctrs::vec_size(data) == 0) {
+  if (vec_size(data) == 0) {
     ret <-
-      switch(basis,
-           spline  = new_tfb_spline(numeric(0), ...),
-           fpc     = new_tfb_fpc(numeric(0), ...)) #TODO: wavelet?
+      switch(
+        basis,
+        spline = new_tfb_spline(numeric(0), ...),
+        fpc = new_tfb_fpc(numeric(0), ...)
+      ) #TODO: wavelet?
     return(ret)
   }
-  switch(basis,
-         spline  = tfb_spline(data, ...),
-         fpc     = tfb_fpc(data, ...),
-         wavelet = tfb_wavelet(data, ...))
+  switch(
+    basis,
+    spline = tfb_spline(data, ...),
+    fpc = tfb_fpc(data, ...),
+    wavelet = tfb_wavelet(data, ...)
+  )
   # nocov end
 }
 

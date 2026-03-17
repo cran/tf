@@ -6,7 +6,8 @@ test_that("tfb_spline defaults work for all kinds of regular input", {
   expect_message(tfb_spline(smoo), "100")
   expect_length(tfb_spline(smoo, verbose = FALSE), length(smoo))
   expect_equal(
-    tf_evaluations(tfb_spline(smoo, verbose = FALSE)), tf_evaluations(smoo),
+    tf_evaluations(tfb_spline(smoo, verbose = FALSE)),
+    tf_evaluations(smoo),
     tolerance = 1e-3
   )
   for (dat in list(smoo_list, smoo_matrix, smoo_df)) {
@@ -14,76 +15,190 @@ test_that("tfb_spline defaults work for all kinds of regular input", {
     expect_s3_class(smoo_, "tfb_spline")
     expect_length(smoo_, length(smoo))
     expect_equal(
-      tf_evaluations(smoo_), tf_evaluations(smoo),
-      tolerance = 1e-3, ignore_attr = TRUE
+      tf_evaluations(smoo_),
+      tf_evaluations(smoo),
+      tolerance = 1e-3,
+      ignore_attr = TRUE
     )
   }
 })
 
-test_that("tfb_spline defaults work for all kinds of irregular input", {
-  expect_s3_class(tfb_spline(irr, verbose = FALSE), "tfb_spline")
-  expect_message(tfb_spline(irr), "100")
-  expect_length(tfb_spline(irr, verbose = FALSE), length(irr))
-  expect_message(tfb_spline(irr_df), "100")
+test_that("tfb_spline works for fda::fd input", {
+  skip_if_not_installed("fda")
 
-  irr_tfb_ <- tfb_spline(irr_list, arg = tf_arg(irr), verbose = FALSE)
-  expect_s3_class(irr_tfb_, "tfb_spline")
-  expect_length(irr_tfb_, length(irr))
+  set.seed(1234)
+  arg <- seq(0, 10, length.out = 100)
+  i <- 5
+  k <- 25
+  data <- sapply(seq_len(i), \(i) sin(arg) + rnorm(length(arg), 0, 0.01))
+
+  # b-splines
+  basis <- fda::create.bspline.basis(rangeval = c(0, 10), nbasis = k)
+  smoo_fda <- fda::smooth.basis(arg, data, basis)$fd
+  expect_no_message(tfb_ <- tfb_spline(smoo_fda, arg = arg, verbose = FALSE))
+  expect_s3_class(tfb_, "tfb_spline")
+  expect_length(tfb_, i)
+  expect_identical(attr(tfb_, "basis_args")$k, k)
+  expect_identical(attr(tfb_, "basis_args")$bs, "bs")
+  expect_identical(tf_domain(tfb_), c(0, 10))
   expect_equal(
-    tf_evaluate(irr_tfb_, tf_arg(irr)), tf_evaluations(irr),
+    fda::eval.basis(arg, basis) %*% smoo_fda$coefs,
+    as.matrix(tfb_) |> t(),
+    tolerance = 1e-4,
+    ignore_attr = TRUE
+  )
+
+  # fourier
+  basis <- fda::create.fourier.basis(
+    rangeval = c(0, 10),
+    nbasis = k,
+    period = 10
+  )
+  smoo_fda <- fda::smooth.basis(arg, data, basis)$fd
+  expect_no_message(tfb_ <- tfb_spline(smoo_fda, arg = arg, verbose = FALSE))
+  expect_s3_class(tfb_, "tfb_spline")
+  expect_length(tfb_, i)
+  expect_identical(attr(tfb_, "basis_args")$k, k)
+  expect_identical(attr(tfb_, "basis_args")$bs, "fourier")
+  expect_identical(tf_domain(tfb_), c(0, 10))
+  expect_equal(
+    fda::eval.basis(arg, basis) %*% smoo_fda$coefs,
+    as.matrix(tfb_) |> t(),
+    tolerance = 1e-4,
+    ignore_attr = TRUE
+  )
+})
+
+test_that("tfb_spline works for fda::fdSmooth input", {
+  skip_if_not_installed("fda")
+
+  set.seed(1234)
+  arg <- seq(0, 10, length.out = 100)
+  i <- 5
+  k <- 25
+  data <- sapply(seq_len(i), \(i) sin(arg) + rnorm(length(arg), 0, 0.01))
+
+  basis <- fda::create.bspline.basis(rangeval = c(0, 10), nbasis = k)
+  smoo_fda <- fda::smooth.basis(arg, data, basis)
+  tfb_fdsmooth <- tfb_spline(smoo_fda, verbose = FALSE)
+  tfb_fd <- tfb_spline(smoo_fda$fd, arg = arg, verbose = FALSE)
+  expect_identical(tfb_fdsmooth, tfb_fd)
+
+  # custom arg vector
+  expect_message(
+    tfb_smooth <- tfb_spline(
+      smoo_fda,
+      arg = seq(0, 10, length.out = 50),
+      verbose = TRUE
+    )
+  )
+  expect_s3_class(tfb_smooth, "tfb_spline")
+  expect_length(tf_arg(tfb_smooth), 50)
+})
+
+test_that("tfb_spline defaults work for all kinds of irregular input", {
+  expect_warning(
+    tfb_spline(irr, verbose = FALSE),
+    "Sparse data"
+  )
+  expect_s3_class(
+    tfb_spline(irr, verbose = FALSE) |> suppressWarnings(),
+    "tfb_spline"
+  )
+  irr_tfb_1 <- tfb_spline(irr, verbose = FALSE) |> suppressWarnings()
+  expect_length(irr_tfb_1, length(irr))
+  expect_equal(
+    tf_evaluations(irr_tfb_1),
+    tfb_spline(irr_df, verbose = FALSE) |>
+      tf_evaluations() |>
+      suppressWarnings()
+  )
+
+  expect_warning(
+    tfb_spline(irr_list, arg = tf_arg(irr), verbose = FALSE),
+    "Sparse data"
+  )
+  irr_tfb_2 <- tfb_spline(irr_list, arg = tf_arg(irr), verbose = FALSE) |>
+    suppressWarnings()
+  expect_s3_class(irr_tfb_2, "tfb_spline")
+  expect_length(irr_tfb_2, length(irr))
+  expect_equal(
+    tf_evaluate(irr_tfb_2, tf_arg(irr)),
+    tf_evaluations(irr),
     tolerance = 1e-1
   )
 
   for (dat in list(irr_matrix, irr_df)) {
-    irr_tfb_ <- tfb_spline(dat, verbose = FALSE)
+    expect_warning(
+      tfb_spline(dat, verbose = FALSE),
+      "Sparse data"
+    )
+    irr_tfb_ <- tfb_spline(dat, verbose = FALSE) |> suppressWarnings()
     expect_s3_class(irr_tfb_, "tfb_spline")
     expect_length(irr_tfb_, length(irr))
     expect_equal(
-      tf_evaluate(irr_tfb_, tf_arg(irr)), tf_evaluations(irr),
-      tolerance = 1e-1, ignore_attr = TRUE
+      tf_evaluate(irr_tfb_, tf_arg(irr)),
+      tf_evaluations(irr),
+      tolerance = 1e-1,
+      ignore_attr = TRUE
     )
   }
 })
 
 test_that("unpenalized tfb_spline works", {
-  expect_error(tfb_spline(narrow, k = 11, penalized = FALSE, verbose = FALSE), "reduce k")
-  expect_s3_class(
-    tfb_spline(narrow, k = 8, penalized = FALSE, verbose = FALSE), "tfb_spline"
+  expect_error(
+    tfb_spline(narrow, k = 11, penalized = FALSE, verbose = FALSE),
+    "too sparse"
   )
   expect_s3_class(
-    tfb_spline(rough, k = 15, penalized = FALSE, verbose = FALSE), "tfb_spline"
+    tfb_spline(narrow, k = 8, penalized = FALSE, verbose = FALSE),
+    "tfb_spline"
+  )
+  expect_s3_class(
+    tfb_spline(rough, k = 15, penalized = FALSE, verbose = FALSE),
+    "tfb_spline"
   )
 
   expect_s3_class(
-    tfb_spline(exp(smoo),
-      family = Gamma(link = "log"), penalized = FALSE, verbose = FALSE
+    tfb_spline(
+      exp(smoo),
+      family = Gamma(link = "log"),
+      penalized = FALSE,
+      verbose = FALSE
     ),
     "tfb_spline"
   )
   expect_s3_class(
-      tfb_spline(narrow^3,
-        family = scat(), k = 5, penalized = FALSE, verbose = FALSE) |>
-        suppressWarnings() |> suppressMessages(),
-      "tfb_spline"
+    tfb_spline(
+      narrow^3,
+      family = scat(),
+      k = 5,
+      penalized = FALSE,
+      verbose = FALSE
+    ) |>
+      suppressWarnings() |>
+      suppressMessages(),
+    "tfb_spline"
   )
 
   expect_equal(
     tfb_spline(irr, k = 11, penalized = FALSE, verbose = FALSE),
     tfb_spline(irr, k = 11, verbose = FALSE),
-    tolerance = 1e-1, ignore_attr = TRUE
+    tolerance = 1e-1,
+    ignore_attr = TRUE
   )
 
   # GLM case: fitting on exp-scale and transforming back:
-  expect_equal(
-    tfb_spline(exp(smoo),
-      family = gaussian(link = "log"),
-      penalized = FALSE, verbose = FALSE
-    ) |>
-      log() |>
-      as.matrix(),
-    as.matrix(smoo),
-    tolerance = 0.001
-  )
+  actual <- tfb_spline(
+    exp(smoo),
+    family = gaussian(link = "log"),
+    penalized = FALSE,
+    verbose = FALSE
+  ) |>
+    tfd() |>
+    log() |>
+    as.matrix()
+  expect_equal(actual, as.matrix(smoo), tolerance = 0.001)
 
   expect_message(
     try(
@@ -114,21 +229,19 @@ test_that("mgcv spline basis options work", {
   for (bs in c("tp", "ds", "gp", "ps")) {
     smoo_ <- try(tfb_spline(smoo, k = 21, bs = bs, verbose = FALSE))
     expect_s3_class(smoo_, "tfb_spline")
-    expect_equal(tf_evaluations(smoo_), tf_evaluations(smoo),
-      tolerance = 1e-2
-    )
+    expect_equal(tf_evaluations(smoo_), tf_evaluations(smoo), tolerance = 1e-2)
     smoo_spec <- environment(attr(smoo_, "basis"))$spec
     expect_equal(smoo_spec$bs.dim, 21)
     expect_s3_class(
       smoo_spec,
       class(smooth.construct(
         s(x, bs = bs),
-        data = list(x = 1:40), knots = NULL
+        data = list(x = 1:40),
+        knots = NULL
       ))
     )
   }
 })
-
 
 test_that("global and pre-specified smoothing options work", {
   rough_global <- try(tfb(rough, global = TRUE, k = 51, verbose = FALSE))
@@ -137,9 +250,9 @@ test_that("global and pre-specified smoothing options work", {
     system.time(
       tfb(c(rough, rough, rough), k = 51, verbose = FALSE)
     )["elapsed"],
-      system.time(
-        tfb(c(rough, rough, rough), k = 51, global = TRUE, verbose = FALSE)
-      )["elapsed"]
+    system.time(
+      tfb(c(rough, rough, rough), k = 51, global = TRUE, verbose = FALSE)
+    )["elapsed"]
   )
 
   expect_equal(
@@ -147,35 +260,57 @@ test_that("global and pre-specified smoothing options work", {
     tfb(rough, penalized = FALSE, k = 51, verbose = FALSE) |> tf_evaluations()
   )
   expect_equal(
-    tfb(rough, sp = 0.2, k = 75, verbose = FALSE) |> tf_evaluations() |>
-      suppressMessages() |> suppressWarnings(),
-    tfb(rough, sp = 0.2, k = 10, verbose = FALSE) |> tf_evaluations() |>
-      suppressMessages() |> suppressWarnings(),
+    tfb(rough, sp = 0.2, k = 75, verbose = FALSE) |>
+      tf_evaluations() |>
+      suppressMessages() |>
+      suppressWarnings(),
+    tfb(rough, sp = 0.2, k = 10, verbose = FALSE) |>
+      tf_evaluations() |>
+      suppressMessages() |>
+      suppressWarnings(),
     tolerance = 1e-2
   )
 
   expect_equal(
-    tfb(exp(rough),
-      sp = 1e-15, k = 51, family = gaussian(link = "log"),
+    tfb(
+      exp(rough),
+      sp = 1e-15,
+      k = 51,
+      family = gaussian(link = "log"),
       verbose = FALSE
     ) |>
       tf_evaluations(),
-    tfb(exp(rough),
-      penalized = FALSE, k = 51, family = gaussian(link = "log"),
+    tfb(
+      exp(rough),
+      penalized = FALSE,
+      k = 51,
+      family = gaussian(link = "log"),
       verbose = FALSE
     ) |>
       tf_evaluations(),
     tolerance = 1e-3
   )
   expect_equal(
-    tfb(exp(rough),
-      sp = 0.2, k = 75, family = gaussian(link = "log"), verbose = FALSE
-    ) |> tf_evaluations() |>
-      suppressMessages() |> suppressWarnings(),
-    tfb(exp(rough),
-      sp = 0.2, k = 10, family = gaussian(link = "log"), verbose = FALSE
-    ) |> tf_evaluations() |>
-      suppressMessages() |> suppressWarnings(),
+    tfb(
+      exp(rough),
+      sp = 0.2,
+      k = 75,
+      family = gaussian(link = "log"),
+      verbose = FALSE
+    ) |>
+      tf_evaluations() |>
+      suppressMessages() |>
+      suppressWarnings(),
+    tfb(
+      exp(rough),
+      sp = 0.2,
+      k = 10,
+      family = gaussian(link = "log"),
+      verbose = FALSE
+    ) |>
+      tf_evaluations() |>
+      suppressMessages() |>
+      suppressWarnings(),
     tolerance = 1e-2
   )
 })

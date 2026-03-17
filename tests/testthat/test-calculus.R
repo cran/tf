@@ -23,20 +23,31 @@ square_b <- tfb(square, k = 45, bs = "tp", verbose = FALSE)
 test_that("basic derivatives work", {
   dgrid <- seq(from + 0.5, to - 0.5, length.out = 50)
 
-  expect_equal(tf_derive(cubic)[, dgrid], square[, dgrid], tolerance = 0.1)
-  expect_equal(tf_derive(cubic_irreg)[, dgrid], square[, dgrid],
+  expect_equal(tf_derive(cubic)[, dgrid], square[, dgrid], tolerance = 0.01)
+  expect_equal(
+    tf_derive(cubic_irreg)[, dgrid],
+    square[, dgrid],
     tolerance = 0.1
   )
-  expect_equal(tf_derive(cubic_b)[, dgrid], square[, dgrid],
-    tolerance = 0.1, ignore_attr = TRUE
+  expect_equal(
+    tf_derive(cubic_b)[, dgrid],
+    square[, dgrid],
+    tolerance = 0.1,
+    ignore_attr = TRUE
   )
-  expect_equal(tf_derive(cubic, order = 2)[, dgrid], lin[, dgrid],
+  expect_equal(
+    tf_derive(cubic, order = 2)[, dgrid],
+    lin[, dgrid],
     tolerance = 0.1
   )
-  expect_equal(tf_derive(cubic_irreg, order = 2)[, dgrid], lin[, dgrid],
+  expect_equal(
+    tf_derive(cubic_irreg, order = 2)[, dgrid],
+    lin[, dgrid],
     tolerance = 0.1
   )
-  expect_equal(tf_derive(cubic_b, order = 2)[, dgrid], lin[, dgrid],
+  expect_equal(
+    tf_derive(cubic_b, order = 2)[, dgrid],
+    lin[, dgrid],
     tolerance = 0.1,
     ignore_attr = TRUE
   )
@@ -45,25 +56,75 @@ test_that("basic derivatives work", {
 test_that("basic definite integration works", {
   expect_equal(tf_integrate(square), to^3 - from^3, tolerance = 0.1)
   expect_equal(tf_integrate(square_irreg), to^3 - from^3, tolerance = 0.1)
-  expect_equal(tf_integrate(square_b), to^3 - from^3,
+  expect_equal(
+    tf_integrate(square_b),
+    to^3 - from^3,
     tolerance = 0.1,
     ignore_attr = TRUE
   )
 })
 
 test_that("basic antiderivatives work", {
-  expect_equal(tf_integrate(square, definite = FALSE)[, dgrid],
+  expect_equal(
+    tf_integrate(square, definite = FALSE)[, dgrid],
     cubic[, dgrid] - from^3,
     tolerance = 0.1
   )
-  expect_equal(tf_integrate(square_irreg, definite = FALSE)[, dgrid],
+  expect_equal(
+    tf_integrate(square_irreg, definite = FALSE)[, dgrid],
     cubic[, dgrid] - from^3,
     tolerance = 0.1
   )
-  expect_equal(tf_integrate(square_b, definite = FALSE)[, dgrid],
+  expect_equal(
+    tf_integrate(square_b, definite = FALSE)[, dgrid],
     cubic[, dgrid] - from^3,
-    tolerance = 0.1, ignore_attr = TRUE
+    tolerance = 0.1,
+    ignore_attr = TRUE
   )
+})
+
+test_that("calculus works for tfb_spline with non-identity link", {
+  set.seed(481)
+  f_pos <- exp(tf_rgp(4, arg = grid, nugget = 0) / 4)
+  f_link <- suppressMessages({
+    capture.output(
+      f_link <- tfb(
+        f_pos,
+        k = 35,
+        bs = "tp",
+        family = gaussian(link = "log"),
+        verbose = FALSE
+      )
+    )
+    f_link
+  })
+
+  d1 <- expect_no_error(suppressMessages(tf_derive(f_link, order = 1)))
+  d2 <- expect_no_error(suppressMessages(tf_derive(f_link, order = 2)))
+  d1_ref <- tf_derive(tfd(f_link), order = 1)
+  d2_ref <- tf_derive(tfd(f_link), order = 2)
+  expect_s3_class(d1, "tfd")
+  expect_s3_class(d2, "tfd")
+  expect_equal(d1[, dgrid], d1_ref[, dgrid], tolerance = 1e-8)
+  expect_equal(d2[, dgrid], d2_ref[, dgrid], tolerance = 1e-8)
+
+  i1 <- expect_no_error(suppressMessages(tf_integrate(
+    f_link,
+    definite = FALSE
+  )))
+  i1_ref <- tf_integrate(tfd(f_link), definite = FALSE)
+  expect_s3_class(i1, "tfd")
+  expect_equal(i1[, dgrid], i1_ref[, dgrid], tolerance = 1e-8)
+
+  int_grid <- seq(-0.8, 0.8, length.out = 21)
+  i2 <- expect_no_error(suppressMessages(tf_integrate(
+    f_link,
+    lower = -1,
+    upper = 1,
+    definite = FALSE
+  )))
+  i2_ref <- tf_integrate(tfd(f_link), lower = -1, upper = 1, definite = FALSE)
+  expect_equal(i2[, int_grid], i2_ref[, int_grid], tolerance = 1e-5)
 })
 
 test_that("deriv & tf_integrate are reversible (approximately)", {
@@ -82,11 +143,50 @@ test_that("deriv & tf_integrate are reversible (approximately)", {
 
   f_pc <- tfb_fpc(
     f[1:3, seq(tf_domain(f)[1], tf_domain(f)[2], length.out = 101)],
-    smooth = FALSE, verbose = FALSE
+    smooth = FALSE,
+    verbose = FALSE
   )
   f_pc2 <- tf_integrate(tf_derive(f_pc), definite = FALSE)
   f_pc3 <- tf_derive(tf_integrate(f_pc, definite = FALSE))
   expect_equal(f_pc[, dgrid], f_pc2[, dgrid], tolerance = 0.1)
   expect_equal(f_pc[, dgrid], f_pc3[, dgrid], tolerance = 0.1)
   expect_equal(tf_integrate(f_pc), tf_integrate(f[1:3]), tolerance = 0.01)
+})
+
+test_that("calculus methods are quiet and preserve existing NA entries", {
+  f_na <- tf_rgp(4, arg = grid)
+  f_na[2] <- f_na[2] * NA_real_
+
+  d_na <- expect_no_warning(tf_derive(f_na))
+  i_def <- expect_no_warning(tf_integrate(f_na))
+  i_indef <- expect_no_warning(tf_integrate(f_na, definite = FALSE))
+
+  expect_true(is.na(d_na[2]))
+  expect_true(is.na(i_indef[2]))
+  expect_true(is.na(i_def[2]))
+})
+
+test_that("tf_derive preserves grid and domain", {
+  expect_equal(tf_arg(tf_derive(cubic)), tf_arg(cubic))
+  expect_equal(tf_domain(tf_derive(cubic)), tf_domain(cubic))
+  expect_equal(tf_domain(tf_derive(cubic, order = 2)), tf_domain(cubic))
+  expect_equal(tf_domain(tf_derive(cubic_irreg)), tf_domain(cubic_irreg))
+})
+
+test_that("tf_derive works on 2-point and 3-point grids", {
+  f2 <- tfd(c(1, 4), arg = c(0, 1))
+  d2 <- tf_derive(f2)
+  expect_equal(as.numeric(d2[, c(0, 1)]), c(3, 3))
+
+  f3 <- tfd(c(0, 1, 4), arg = c(0, 1, 2))
+  d3 <- tf_derive(f3)
+  expect_equal(as.numeric(d3[, 1]), 2)
+})
+
+test_that("derivative at extremum is near zero", {
+  # quadratic f(x) = -(x-2)^2 + 5 has extremum at x=2, f'(2) = 0
+  qgrid <- seq(0, 4, length.out = 201)
+  f_quad <- tfd(-(qgrid - 2)^2 + 5, arg = qgrid)
+  f_deriv <- tf_derive(f_quad)
+  expect_equal(as.numeric(f_deriv[, 2]), 0, tolerance = 1e-4)
 })

@@ -7,13 +7,17 @@
 ensure_list(x)
 }
 \arguments{
-\item{x}{any input}
+\item{x}{any input.}
 }
 \value{
 \code{x} turned into a list.
 }
 \description{
 See above.
+}
+\examples{
+ensure_list(1:3)
+ensure_list(list(1, 2))
 }
 \seealso{
 Other tidyfun developer tools: 

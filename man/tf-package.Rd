@@ -12,11 +12,11 @@ provides the class definitions and methods infrastructure for \code{tidyfun} --
 \itemize{
 \item new S3 data types for representing (vectors of) functional data:
 \code{\link[=tfd]{tfd()}} & \code{\link[=tfb]{tfb()}}
-\item arithmetic operators for such data (\code{\link[=Ops.tf]{Ops.tf()}}),
+\item arithmetic operators for such data
 \item simple descriptive statistics: e.g. \code{\link[=mean.tf]{mean.tf()}}, \code{\link[=median.tf]{median.tf()}}
 \item base graphics functions for such data: \code{\link[=plot.tf]{plot.tf()}}
 \item functions to do smoothing (\code{\link[=tf_smooth.tfd]{tf_smooth.tfd()}}),
-differentiation \code{\link[=tf_derive.tfd]{tf_derive.tfd()}}) and integration (\code{\link[=tf_derive.tfd]{tf_derive.tfd()}})
+differentiation (\code{\link[=tf_derive.tfd]{tf_derive.tfd()}}) and integration (\code{\link[=tf_integrate.tfd]{tf_integrate.tfd()}})
 }
 
 The goal of the add-on package \code{tidyfun} is to make data wrangling and
@@ -36,17 +36,17 @@ Useful links:
 
 }
 \author{
-\strong{Maintainer}: Fabian Scheipl \email{fabian.scheipl@googlemail.com} (\href{https://orcid.org/0000-0001-8172-3603}{ORCID})
+\strong{Maintainer}: Fabian Scheipl \email{fabian.scheipl@googlemail.com} (\href{https://orcid.org/0000-0001-8172-3603}{ORCID}) [copyright holder]
 
 Authors:
 \itemize{
   \item Jeff Goldsmith
+  \item Maximilian Mücke (\href{https://orcid.org/0009-0000-9432-9795}{ORCID})
 }
 
 Other contributors:
 \itemize{
   \item Julia Wrobel (\href{https://orcid.org/0000-0001-6783-1421}{ORCID}) [contributor]
-  \item Maximilian Muecke (\href{https://orcid.org/0009-0000-9432-9795}{ORCID}) [contributor]
   \item Sebastian Fischer (\href{https://orcid.org/0000-0002-9609-3197}{ORCID}) [contributor]
   \item Trevor Hastie (softImpute author) [contributor]
   \item Rahul Mazumder (softImpute author) [contributor]

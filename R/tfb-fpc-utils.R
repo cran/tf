@@ -22,9 +22,9 @@
 #' see last example for [tfb_fpc()]
 #'
 #' @param data numeric matrix of function evaluations
-#'   (each row is one curve, no NAs)
-#' @param arg numeric vector of argument values
-#' @param pve percentage of variance explained
+#'   (each row is one curve, no NAs).
+#' @param arg numeric vector of argument values.
+#' @param pve percentage of variance explained.
 #' @returns a list with entries
 #' - `mu` estimated mean function (numeric vector)
 #' - `efunctions` estimated FPCs (numeric matrix, columns represent FPCs)
@@ -32,12 +32,10 @@
 #' - `npc` how many FPCs were returned for the given `pve` (integer)
 #' - `scoring_function` a function that returns FPC scores for new data
 #'    and given eigenfunctions, see `tf:::.fpc_wsvd_scores` for an example.
-#' @author Trevor Hastie, Rahul Mazumder, Cheng Meng, Fabian Scheipl
-#' @references code adapted from / inspired by `mogsa::wsvd()` by Cheng Meng
+#' @author Trevor Hastie, Rahul Mazumder, Chen Meng, Fabian Scheipl
+#' @references code adapted from / inspired by `mogsa::wsvd()` by Chen Meng
 #'   and `softImpute::softImpute()` by Trevor Hastie and Rahul Mazumder.\cr
-#' `r format_bib("meng2023mogsa")`\cr
-#' `r format_bib("mazumder2010")`\cr
-#' `r format_bib("softimpute")`
+#' `r format_bib("meng2023mogsa", "mazumder2010", "softimpute")`
 #' @family tfb-class
 #' @family tfb_fpc-class
 fpc_wsvd <- function(data, arg, pve = 0.995) {
@@ -45,8 +43,6 @@ fpc_wsvd <- function(data, arg, pve = 0.995) {
 }
 
 #' @rdname fpc_wsvd
-#' @importFrom utils head tail
-#' @importFrom stats lowess
 #' @export
 fpc_wsvd.matrix <- function(data, arg, pve = 0.995) {
   assert_matrix(data, mode = "numeric", min.cols = 2, min.rows = 1)
@@ -64,10 +60,13 @@ fpc_wsvd.matrix <- function(data, arg, pve = 0.995) {
   pc <- if (!any(nas)) {
     svd(data_wc, nu = 0, nv = min(dim(data)))
   } else {
-    message("Using softImpute SVD on ", round(mean(nas)*100, 1), "% missing data")
+    cli::cli_inform(
+      "Using softImpute SVD on {round(mean(nas) * 100, 1)}% missing data."
+    )
     if (pve + mean(nas) > 1) {
-      warning("High <pve> with many missings likely to yield bad FPC estimates.",
-              call. = FALSE)
+      cli::cli_inform(c(
+        x = "High {.arg pve} combined with high missingness likely to yield bad FPC estimates."
+      ))
     }
     simpute_svd(data_wc)
   }
@@ -79,15 +78,21 @@ fpc_wsvd.matrix <- function(data, arg, pve = 0.995) {
 
   if (any(nas)) {
     # slightly smooth efunctions from incomplete data to reduce artefacts
-    efunctions <- apply(efunctions, 2,
-                        \(ef) stats::lowess(x = arg, y = ef,  f = .15)$y)
+    efunctions <- apply(
+      efunctions,
+      2,
+      \(ef) lowess(x = arg, y = ef, f = 0.15)$y
+    )
   }
   evalues <- (pc$d[1:use])^2
   scores <- .fpc_wsvd_scores(data, efunctions, mean, weights) #!!
 
   list(
-    mu = mean, efunctions = efunctions,
-    scores = scores, npc = use, evalues = evalues,
+    mu = mean,
+    efunctions = efunctions,
+    scores = scores,
+    npc = use,
+    evalues = evalues,
     error_variance = cumsum((pc$d^2)[-(1:use)]),
     scoring_function = .fpc_wsvd_scores
   )
@@ -96,14 +101,17 @@ fpc_wsvd.matrix <- function(data, arg, pve = 0.995) {
 # extract scoring function for reuse in tf_rebase
 # performs simple (weighted) LS fit of data onto the eigenfunctions.
 .fpc_wsvd_scores <- function(data_matrix, efunctions, mean, weights) {
-  w_mat <- matrix(weights, ncol = length(weights), nrow = nrow(data_matrix),
-                  byrow = TRUE)
+  w_mat <- matrix(
+    weights,
+    ncol = length(weights),
+    nrow = nrow(data_matrix),
+    byrow = TRUE
+  )
   w_mat[is.na(data_matrix)] <- 0
   data_matrix[is.na(data_matrix)] <- 0
   data_wc <- t((t(data_matrix) - mean) * sqrt(t(w_mat)))
   t(qr.coef(qr(efunctions), t(data_wc) / sqrt(weights)))
 }
-
 
 #' @rdname fpc_wsvd
 #' @export

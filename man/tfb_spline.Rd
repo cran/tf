@@ -6,6 +6,8 @@
 \alias{tfb_spline.matrix}
 \alias{tfb_spline.numeric}
 \alias{tfb_spline.list}
+\alias{tfb_spline.fd}
+\alias{tfb_spline.fdSmooth}
 \alias{tfb_spline.tfd}
 \alias{tfb_spline.tfb}
 \alias{tfb_spline.default}
@@ -55,6 +57,26 @@ tfb_spline(data, ...)
   ...
 )
 
+\method{tfb_spline}{fd}(
+  data,
+  arg = NULL,
+  domain = NULL,
+  penalized = FALSE,
+  global = FALSE,
+  verbose = TRUE,
+  ...
+)
+
+\method{tfb_spline}{fdSmooth}(
+  data,
+  arg = NULL,
+  domain = NULL,
+  penalized = FALSE,
+  global = FALSE,
+  verbose = TRUE,
+  ...
+)
+
 \method{tfb_spline}{tfd}(
   data,
   arg = NULL,
@@ -91,15 +113,17 @@ tfb_spline(data, ...)
 
 \item{...}{arguments to the calls to \code{\link[mgcv:s]{mgcv::s()}} setting up the basis (and
 to \code{\link[mgcv:magic]{mgcv::magic()}} or \code{\link[mgcv:gam.fit]{mgcv::gam.fit()}} if \code{penalized = TRUE}). Uses \code{k = 25} cubic regression spline basis functions (\code{bs = "cr"}) by default, but
-should be set appropriately by the user. See Details and examples in the
+should be set appropriately by the user. See details and examples in the
 vignettes.}
 
 \item{id}{The name or number of the column defining which data belong to
 which function.}
 
-\item{arg}{\code{numeric}, or list of \code{numeric}s. The evaluation grid.
+\item{arg}{For the \code{list}- and \code{matrix}-methods:
+\code{numeric}, or list of \code{numeric}s. The evaluation grid.
 For the \code{data.frame}-method: the
-name/number of the column defining the evaluation grid. The \code{matrix} method
+name/number of the column defining the evaluation grid.
+The \code{matrix} method
 will try to guess suitable \code{arg}-values from the column names of \code{data} if
 \code{arg} is not supplied. Other methods fall back on integer sequences
 (\verb{1:<length of data>}) as the default if not provided.}
@@ -115,7 +139,7 @@ ordinary least squares / ML estimates for basis coefficients. \code{FALSE} is
 much faster but will overfit for noisy data if \code{k} is (too) large.}
 
 \item{global}{Defaults to \code{FALSE}. If \code{TRUE} and \code{penalized = TRUE}, all
-functions share the same smoothing parameter (see Details).}
+functions share the same smoothing parameter (see details).}
 
 \item{verbose}{\code{TRUE} (default) outputs statistics about the fit achieved by
 the basis and other diagnostic messages.}
@@ -180,6 +204,12 @@ data for all curves simultaneously is likely to yield better results, this is
 
 \item \code{tfb_spline(list)}: convert lists
 
+\item \code{tfb_spline(fd)}: convert \code{fd} objects. Almost exact re-representation for
+objects using Fourier- or B-spline bases, other \code{fda}-style bases are not implemented here.
+
+\item \code{tfb_spline(fdSmooth)}: convert \code{fdSmooth} objects. Almost exact re-representation for
+objects using Fourier- or B-spline bases, other \code{fda}-style bases are not implemented here.
+
 \item \code{tfb_spline(tfd)}: convert \code{tfd} (raw functional data)
 
 \item \code{tfb_spline(tfb)}: convert \code{tfb}: modify basis representation, smoothing.
@@ -188,6 +218,12 @@ data for all curves simultaneously is likely to yield better results, this is
 when data is missing
 
 }}
+\examples{
+arg <- seq(0, 1, length.out = 21)
+mat <- rbind(sin(2 * pi * arg), cos(2 * pi * arg))
+fit <- tfb_spline(mat, arg = arg, k = 8, penalized = FALSE, verbose = FALSE)
+fit
+}
 \seealso{
 \code{\link[mgcv:smooth.terms]{mgcv::smooth.terms()}} for spline basis options.
 

@@ -5,29 +5,38 @@
 #'
 #' @rdname converters
 #' @inheritParams base::as.data.frame
-#' @param optional not used
+#' @param optional not used.
 #' @param unnest if `TRUE`, the function will return a data.frame with the
 #'   evaluated functions.
-#' @param x a `tf` object
+#' @param x a `tf` object.
 #' @returns **for `as.data.frame.tf`:** if `unnest` is `FALSE` (default), a
 #'   one-column `data.frame` with a `tf`-column containing `x`. if `unnest` is
-#'   `TRUE`, a 3-column data frame with columns `id` for the (unique) names of
-#'   `x` or a numeric identifier, `arg` and `value`, with each row containing
+#'   `TRUE`, a 3-column data frame with columns `id` (containing (unique) names of
+#'   `x` or a numeric identifier if `x` is unnamed), `arg`, and `value`, with each row containing
 #'   one function evaluation at the original `arg`-values.
+#' @examples
+#' f <- tfd(sin(seq(0, 2 * pi, length.out = 11)), arg = seq(0, 1, length.out = 11))
+#' as.data.frame(f)
+#' as.data.frame(f, unnest = TRUE)
+#' as.matrix(f)
+#' fun <- as.function(f)
+#' fun(c(0, 0.5, 1))
 #' @export
 #' @family tidyfun converters
-as.data.frame.tf <- function(x, row.names = NULL, optional = FALSE,
-                             unnest = FALSE, ...) {
+as.data.frame.tf <- function(
+  x,
+  row.names = NULL,
+  optional = FALSE,
+  unnest = FALSE,
+  ...
+) {
   if (unnest) return(tf_2_df(x))
-  colname <- deparse(substitute(x))
-  ret <- data.frame(tmp = seq_along(x), row.names = row.names)
-  ret[[colname]] <- x
-  ret[, colname, drop = FALSE]
+  new_data_frame(list(x), names = deparse1(substitute(x)))
 }
 
 #' @rdname converters
 #' @param arg a vector of argument values / evaluation points for `x`. Defaults
-#'   to `tf_arg(x)`.
+#'   to `tf_arg(x)` (so for `x` on irregular grids, this will be the union of all observed `arg`-values by default).
 #' @param interpolate should functions be evaluated (i.e., inter-/extrapolated)
 #'   for values in `arg` for which no original data is available? Only relevant
 #'   for the raw data class `tfd`, for which it defaults to `FALSE`.
@@ -38,8 +47,12 @@ as.data.frame.tf <- function(x, row.names = NULL, optional = FALSE,
 #' @family tidyfun converters
 as.matrix.tf <- function(x, arg, interpolate = FALSE, ...) {
   if (missing(arg)) {
-    arg <- tf_arg(x) |> unlist() |>  unique() |> sort()
+    arg <- tf_arg(x)
+    if (is_irreg(x)) {
+      arg <- sort_unique(arg, simplify = TRUE)
+    }
   }
+
   if (is_tfb(x)) interpolate <- TRUE
   assert_arg_vector(arg, x, check_unique = FALSE)
   x[, arg, interpolate = interpolate, matrix = TRUE]

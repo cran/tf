@@ -12,12 +12,12 @@
 #' of the usual `dplyr` tricks are available as well, see examples.\cr
 #' Any `cond`ition evaluates to `NA` on `NA`-entries in `f`.
 #'
-#' @param f a `tf` object
+#' @param f a `tf` object.
 #' @param cond a logical expression about `value` (and/or `arg`) that defines a
 #'   condition about the functions, see examples and details.
 #' @param return for each entry in `f`, `tf_where` either returns *all* `arg`
 #'   for which `cond` is true, the *first*, the *last* or their *range* or
-#'   logical flags whether the functions fullfill the condition *any*where. For
+#'   logical flags whether the functions fulfill the condition *any*where. For
 #'   `"range"`, note that `cond` may not be true for all `arg` values in this
 #'   range, though, this is not checked.
 #' @param arg optional `arg`-values on which to evaluate `f` and check `cond`,
@@ -30,7 +30,7 @@
 #'  - `return = "range"`: a data frame with columns "begin" and "end".
 #'  - else, a numeric vector of the same length as `f` with `NA` for entries of
 #'   `f` that nowhere fulfill the `cond`ition.
-#' @examples
+#' @examplesIf rlang::is_installed("dplyr")
 #' lin <- 1:4 * tfd(seq(-1, 1, length.out = 11), seq(-1, 1, length.out = 11))
 #' tf_where(lin, value %inr% c(-1, 0.5))
 #' tf_where(lin, value %inr% c(-1, 0.5), "range")
@@ -57,21 +57,20 @@
 #' tf_where(f, arg > 0.5 & value > 0)
 #' # does the function ever exceed?
 #' tf_anywhere(f, value > 1)
-#' @importFrom stats setNames
 #' @family tidyfun query-functions
 #' @export
-tf_where <- function(f, cond,
-                     return = c("all", "first", "last", "range", "any"), arg) {
-  if (missing(arg)) {
-    arg <- tf_arg(f)
-  }
+tf_where <- function(
+  f,
+  cond,
+  return = c("all", "first", "last", "range", "any"),
+  arg = tf_arg(f)
+) {
   assert_arg(arg, f)
   return <- match.arg(return)
-  cond_call <- substitute(cond)
-  parent <- parent.frame()
+  cond_quo <- enquo(cond)
   where_at <- map(
     f[, arg, matrix = FALSE],
-    \(x) subset(x, eval(cond_call, envir = x, enclos = parent))[["arg"]]
+    \(x) subset(x, eval_tidy(cond_quo, x))[["arg"]]
   )
   where_at[is.na(f)] <- NA
 
@@ -79,27 +78,25 @@ tf_where <- function(f, cond,
     return(where_at)
   }
 
-  where_at <- map_if(where_at, \(x) length(x) == 0, \(x) NA)
+  where_at[lengths(where_at) == 0] <- NA
   if (return == "range") {
     where_at <- map(where_at, range)
-    where_at <- do.call(what = rbind, args = where_at) |>
+    where_at <- do.call(rbind, where_at) |>
       as.data.frame() |>
       setNames(c("begin", "end"))
     return(where_at)
   }
-  where_at <- switch(return,
-    "any"   = map_lgl(where_at, \(x) !all(is.na(x))),
-    "first" = map_dbl(where_at, min),
-    "last"  = map_dbl(where_at, max)
+  where_at <- switch(
+    return,
+    any = map_lgl(where_at, \(x) !allMissing(x)),
+    first = map_dbl(where_at, min),
+    last = map_dbl(where_at, max)
   )
   where_at
 }
 
 #' @rdname tf_where
 #' @export
-tf_anywhere <- function(f, cond, arg) {
-  call <- match.call()
-  call[[1]] <- tf_where
-  call$return <- "any"
-  eval(call, parent.frame())
+tf_anywhere <- function(f, cond, arg = tf_arg(f)) {
+  tf_where(f = f, cond = {{ cond }}, return = "any", arg = arg)
 }

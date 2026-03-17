@@ -4,7 +4,7 @@
 find_arg <- function(data, arg) {
   if (is.null(arg)) {
     names <- dimnames(data)[[2]]
-    suppressWarnings(arg <- as.numeric(names))
+    arg <- suppressWarnings(as.numeric(names))
     if (is.null(arg) || anyNA(arg)) {
       # extract number-strings
       # will interpret separating-dashes as minus-signs, so functions may run
@@ -15,77 +15,53 @@ find_arg <- function(data, arg) {
         names
       )
       arg <- regmatches(names, arg_matches)
-      suppressWarnings(arg <- as.numeric(arg))
-      if (length(unique(arg)) != dim(data)[2]) arg <- NULL
+      arg <- suppressWarnings(as.numeric(arg))
+      if (vec_unique_count(arg) != ncol(data)) arg <- NULL
     }
     if (is.null(arg) || anyNA(arg)) {
-      message(
-        "Column names not suitable as 'arg'-values. Using 1:ncol(data).",
-        call. = FALSE
+      cli::cli_inform(
+        "Column names not suitable as {.arg arg} values. Using {.code 1:{ncol(data)}} instead."
       )
       arg <- numeric(0)
     }
   }
-  if (!length(arg)) arg <- seq_len(dim(data)[2])
-  stopifnot(length(arg) == dim(data)[2], is.numeric(arg), all(!is.na(arg)))
+  if (length(arg) == 0) {
+    arg <- seq_len(ncol(data))
+  }
+  assert_numeric(arg, any.missing = FALSE)
+  if (length(arg) != ncol(data)) {
+    cli::cli_abort("{.arg arg} must have same length as {.arg data}.")
+  }
   list(arg)
 }
 
-#' @import checkmate
-assert_arg <- function(arg, x, check_unique = TRUE) {
-  if (is.list(arg)) {
-    assert_true(length(arg) %in% c(1, length(x)))
-    walk(arg, \(arg) assert_arg_vector(arg, x = x, check_unique = check_unique))
-  } else {
-    assert_arg_vector(arg, x, check_unique = check_unique)
-  }
-}
-
-.assert_arg_vector <- function(arg, domain_x, check_unique) {
-  if (check_unique && (anyDuplicated(arg) > 0) ) {
-      stop("Non-unique arg-values.", call. = FALSE)
-  }
-  assert_numeric(arg,
-    any.missing = FALSE, unique = FALSE, sorted = TRUE,
-    lower = domain_x[1], upper = domain_x[2]
-  )
-}
-
-assert_arg_vector <- function(arg, x, check_unique = TRUE) {
-  domain_x <- tf_domain(x)
-  .assert_arg_vector(arg, domain_x, check_unique)
+domains_overlap <- function(x, y) {
+  dom_x <- tf_domain(x)
+  dom_y <- tf_domain(y)
+  (dom_x[1] %inr% dom_y || dom_x[2] %inr% dom_y) ||
+    (dom_y[1] %inr% dom_x || dom_y[2] %inr% dom_x)
 }
 
 # default resolution is ~ smallest observed interval/10
 # rounded down to the nearest decimal
 get_resolution <- function(arg) {
   .min_diff <- function(x) {
-    suppressWarnings(ifelse(length(x) - 1, min(diff(x)), x[1]))
+    suppressWarnings(ifelse(length(x) - 1, min(abs(diff(x))), NA))
   }
-  min_diff <- map_dbl(ensure_list(arg),
-                      possibly(.f = .min_diff, otherwise = NA)) |>
-    min(na.rm = TRUE)
+  min_diff <- map_dbl(
+    ensure_list(arg),
+    possibly(.f = .min_diff, otherwise = NA)
+  ) |>
+    min(na.rm = TRUE) |>
+    suppressWarnings()
   if (min_diff < .Machine$double.eps * 10) {
-    stop("(Almost) non-unique arg values detected.", call. = FALSE)
+    cli::cli_abort("(Almost) non-unique {.arg arg} values detected.")
   }
   10^(floor(log10(min_diff)) - 1)
 }
 
-adjust_resolution <- function(arg, f, unique = TRUE) {
-  resolution <- resolution(f)
-  .adjust_resolution(arg, resolution, unique = unique)
-}
-
-.adjust_resolution <- function(arg, resolution, unique = TRUE) {
-  u <- if (unique) base::unique else function(x) x
-  if (is.list(arg)) {
-    map(arg, \(x) u(round_resolution(x, resolution)))
-  } else {
-    u(round_resolution(arg, resolution))
-  }
-}
-
 # "quantize" the values in arg to the given resolution
+# always rounding up/down for positive/negative `updown`
 round_resolution <- function(arg, resolution, updown = 0) {
   if (updown == 0) {
     round(arg / resolution) * resolution
@@ -96,21 +72,22 @@ round_resolution <- function(arg, resolution, updown = 0) {
   }
 }
 
-is_equidist <- function(f) {
+# grids are "equidistant" if their distances deviate less
+# than tol * resolution (by default: by less than 10%)
+is_equidist <- function(f, tol = 1) {
   if (is_irreg(f)) {
     return(FALSE)
   }
-  unique_diffs <- map_lgl(
-    ensure_list(tf_arg(f)),
-    \(x) {
-      round_resolution(x, attr(f, "resolution")) |>
-        diff() |>
-        duplicated() |>
-        tail(-1) |>
-        all()
+  arg <- tf_arg(f)
+  f_resolution <- get_resolution(arg) * tol
+  equidist <- map_lgl(
+    ensure_list(arg),
+    function(x) {
+      deviate <- diff(x) |> diff() |> abs() |> max()
+      deviate < f_resolution
     }
   )
-  all(unique_diffs)
+  all(equidist)
 }
 
 # get intersection of arg vectors
@@ -131,13 +108,19 @@ all_args <- function(e1, e2) {
 #-------------------------------------------------------------------------------
 #  compatibility
 
-compare_tf_attribs <- function(e1, e2,
-                               ignore = c("names", "id"), check_attrib = TRUE) {
+compare_tf_attribs <- function(
+  e1,
+  e2,
+  ignore = c("names", "id"),
+  check_attrib = TRUE
+) {
   # TODO: better way to check evaluator/basis functions?
   a1 <- attributes(e1)
   a2 <- attributes(e2)
   attribs <- union(names(a1), names(a2))
-  if (length(ignore)) attribs <- attribs[!(attribs %in% ignore)]
+  if (length(ignore)) {
+    attribs <- attribs[!(attribs %in% ignore)]
+  }
   .compare <- function(a, b) {
     if (is.null(a) != is.null(b)) {
       return(FALSE)
@@ -152,17 +135,27 @@ compare_tf_attribs <- function(e1, e2,
         # wrapper.... Fingers crossed relevant differences get picked up by
         # differences in the label or basis attributes...
         identical(a, b, ignore.environment = TRUE)
+      } else if (is.list(a)) {
+        all(map2_lgl(a, ensure_list(b), .compare))
       } else {
-        if (is.list(a)) {
-          all(map2_lgl(a, ensure_list(b), .compare))
-        } else {
-          isTRUE(all.equal(a, b, check.attributes = check_attrib))
-        }
+        isTRUE(all.equal(a, b, check.attributes = check_attrib))
       }
     )
   }
   ret <- map_lgl(attribs, \(x) .compare(a1[[x]], a2[[x]])) |> setNames(attribs)
   ret
+}
+
+same_basis <- function(x, y) {
+  if (!(is_tfb(x) && is_tfb(y))) {
+    return(FALSE)
+  }
+  all.equal(
+    attr(x, "basis_matrix"),
+    attr(y, "basis_matrix"),
+    check.attributes = FALSE
+  ) |>
+    isTRUE()
 }
 
 #-------------------------------------------------------------------------------
@@ -173,10 +166,13 @@ compare_tf_attribs <- function(e1, e2,
 #' `in_range` and its infix-equivalent `%inr%` return `TRUE` for all values in
 #'  the numeric vector `f` that are within the range of values in `r`.
 #'
-#' @param f a numeric vector
+#' @param f a numeric vector.
 #' @param r numeric vector used to specify a range, only the minimum and maximum
 #'   of `r` are used.
-#' @returns a `logical` vector of the same length as `f`
+#' @returns a `logical` vector of the same length as `f`.
+#' @examples
+#' in_range(1:10, c(3, 7))
+#' 1:10 %inr% c(3, 7)
 #' @family tidyfun utility functions
 #' @export
 in_range <- function(f, r) {
@@ -191,43 +187,58 @@ in_range <- function(f, r) {
 `%inr%` <- function(f, r) in_range(f, r)
 
 get_args <- function(args, f) {
-  args[names(args) %in% names(formals(f))]
+  args[names(args) %in% formalArgs(f)]
 }
 
 #' Turns any object into a list
 #'
 #' See above.
-#' @param x any input
+#' @param x any input.
 #' @returns `x` turned into a list.
+#' @examples
+#' ensure_list(1:3)
+#' ensure_list(list(1, 2))
 #' @export
 #' @family tidyfun developer tools
 ensure_list <- function(x) {
-  if (!is.list(x)) list(x) else x
+  if (is.list(x)) x else list(x)
 }
 
 #' Make syntactically valid unique names
 #'
 #' See above.
-#' @param x any input
+#' @param x any input.
 #' @returns `x` turned into a list.
+#' @examples
+#' unique_id(c("a", "b", "a"))
 #' @export
 #' @family tidyfun developer tools
-# export for tidyfun...
 unique_id <- function(x) {
   if (anyDuplicated(x) == 0) {
     return(x)
   }
-  if (is.character(x)) x <- sub("$^", "NA", x)
+  if (is.character(x)) {
+    x <- sub("^$", "NA", x)
+  }
   x <- make.names(as.character(x), unique = TRUE)
   x
 }
 
-na_to_0 <- function(x) {
-  x[is.na(x)] <- 0
-  x
+na_to_0 <- function(x) replace(x, is.na(x), 0)
+
+sort_unique <- function(x, simplify = FALSE) {
+  if (simplify) {
+    x <- unlist(x, use.names = FALSE)
+  }
+  sort(unique(x))
 }
 
-n_distinct <- function(x) length(unique(x))
+data_frame0 <- function(...) data_frame(..., .name_repair = "minimal")
+
+is_monotonic <- function(x) {
+  d <- diff(x)
+  all(d >= 0) || all(d <= 0)
+}
 
 # Source: <https://github.com/mlr-org/mlr3misc/blob/main/R/format_bib.R>
 # by Michel Lang (copied here Feb 2024)

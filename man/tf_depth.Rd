@@ -8,28 +8,64 @@
 \usage{
 tf_depth(x, arg, depth = "MBD", na.rm = TRUE, ...)
 
-\method{tf_depth}{matrix}(x, arg, depth = "MBD", na.rm = TRUE, ...)
+\method{tf_depth}{matrix}(
+  x,
+  arg,
+  depth = c("MBD", "MHI", "FM", "FSD", "RPD"),
+  na.rm = TRUE,
+  ...
+)
 
 \method{tf_depth}{tf}(x, arg, depth = "MBD", na.rm = TRUE, ...)
 }
 \arguments{
-\item{x}{\code{tf} (or a matrix of evaluations)}
+\item{x}{\code{tf} (or a matrix of evaluations).}
 
-\item{arg}{grid of evaluation points}
+\item{arg}{grid of evaluation points.}
 
-\item{depth}{currently available: "MBD", i.e. modified band depth}
+\item{depth}{one of \code{"MBD"}, \code{"MHI"}, \code{"FM"}, \code{"FSD"}, or \code{"RPD"}.}
 
-\item{na.rm}{TRUE remove missing observations?}
+\item{na.rm}{remove missing observations? Defaults to \code{TRUE}.}
 
-\item{...}{further arguments handed to the function computing the respective
-tf_depth.}
+\item{...}{for \code{"RPD"}: \code{u} (regularization quantile, default 0.01),
+\code{n_projections} (M, default 5000), \code{n_projections_beta} (L, default
+500).}
 }
 \value{
-vector of tf_depth values
+vector of depth values
 }
 \description{
-Data depths for functional data.
-Currently implemented: Modified Band-2 Depth, see reference.
+Data depths for functional data. All depths are scaled so that 1 means most
+central and 0 means most extreme. Available methods:
+}
+\details{
+\itemize{
+\item \code{"MBD"}: Modified Band-2 Depth (default). Scale of 0 (most extreme) to
+1 (most central).
+\item \code{"MHI"}: Modified Hypograph Index. \strong{Ranks functions from lowest (0) to
+highest (1)} instead of most extreme to most central! For functions that
+never cross: \eqn{MBD = -2(MHI - 0.5)^2 + .5}.
+\item \code{"FM"}: Fraiman-Muniz depth. Integrates pointwise univariate halfspace
+depths over the domain. Scale of 0 (most extreme) to 1 (most central).
+\item \code{"FSD"}: Functional Spatial Depth. Based on spatial signs; robust to
+outliers. Scale of 0 (most extreme) to 1 (most central).
+\item \code{"RPD"}: Regularized Projection Depth. Projects curves onto random
+directions and computes outlyingness. Especially useful for detecting
+shape outliers. Scale of 0 (most extreme) to 1 (most central).
+\strong{Note:} results depend on the RNG state; set a seed
+(e.g. \code{set.seed(...)}) before calling for reproducibility. Accepts
+additional arguments via \code{...}: \code{u} (quantile level for regularization,
+default 0.01), \code{n_projections} (M, number of projection directions,
+default 5000), \code{n_projections_beta} (L, directions for estimating
+regularization parameter, default 500).
+}
+}
+\examples{
+x <- tf_rgp(3)/3 + 1:3
+tf_depth(x, depth = "MBD")
+tf_depth(x, depth = "MHI")
+tf_depth(x, depth = "FM")
+tf_depth(x, depth = "FSD")
 }
 \references{
 Sun, Ying, Genton, G M, Nychka, W D (2012).
@@ -38,6 +74,27 @@ Sun, Ying, Genton, G M, Nychka, W D (2012).
 
 López-Pintado, Sara, Romo, Juan (2009).
 \dQuote{On the concept of depth for functional data.}
-\emph{Journal of the American statistical Association}, \bold{104}(486), 718--734.
+\emph{Journal of the American Statistical Association}, \bold{104}(486), 718--734.
+
+López-Pintado, Sara, Romo, Juan (2011).
+\dQuote{A half-region depth for functional data.}
+\emph{Computational Statistics & Data Analysis}, \bold{55}(4), 1679--1695.
+
+Fraiman, Ricardo, Muniz, Graciela (2001).
+\dQuote{Trimmed means for functional data.}
+\emph{Test}, \bold{10}(2), 419--440.
+
+Chakraborty, Anirvan, Chaudhuri, Probal (2014).
+\dQuote{The spatial distribution in infinite dimensional spaces and related quantiles and depths.}
+\emph{The Annals of Statistics}, \bold{42}(3), 1203--1231.
+
+Bočinec, Filip, Nagy, Stanislav, Yeon, Hyemin (2026).
+\dQuote{Projection depth for functional data: Practical issues, computation and applications.}
+\emph{arXiv preprint arXiv:2602.22877}.
+}
+\seealso{
+Other tidyfun ordering and ranking functions: 
+\code{\link{tf_minmax}},
+\code{\link{tf_order}}
 }
 \concept{tidyfun ordering and ranking functions}

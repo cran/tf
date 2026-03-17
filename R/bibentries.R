@@ -1,5 +1,6 @@
 bibentries <- c(
-  sun2012exact = bibentry("article",
+  sun2012exact = bibentry(
+    "article",
     title = "Exact fast computation of band depth for large functional datasets: How quickly can one million curves be ranked?",
     author = "Sun, Ying and Genton, Marc G and Nychka, Douglas W",
     journal = "Stat",
@@ -9,38 +10,56 @@ bibentries <- c(
     year = "2012",
     publisher = "Wiley Online Library"
   ),
-  lopez2009concept = bibentry("article",
+  lopez2009concept = bibentry(
+    "article",
     title = "On the concept of depth for functional data",
     author = "L\u00f3pez-Pintado, Sara and Romo, Juan",
-    journal = "Journal of the American statistical Association",
+    journal = "Journal of the American Statistical Association",
     volume = "104",
     number = "486",
     pages = "718--734",
     year = "2009",
     publisher = "Taylor & Francis"
   ),
-  mazumder2010 = bibentry("article",
-    title= "Spectral regularization algorithms for learning large incomplete matrices",
+  lopez2011half = bibentry(
+    "article",
+    title = "A half-region depth for functional data",
+    author = "L\u00f3pez-Pintado, Sara and Romo, Juan",
+    journal = "Computational Statistics & Data Analysis",
+    volume = "55",
+    number = "4",
+    pages = "1679--1695",
+    year = "2011",
+    publisher = "Elsevier"
+  ),
+  mazumder2010 = bibentry(
+    "article",
+    title = "Spectral Regularization Algorithms for Learning Large Incomplete Matrices",
     author = "Mazumder, Rahul and Hastie, Trevor and Tibshirani, Robert",
     journal = "The Journal of Machine Learning Research",
     volume = "11",
-    pages = "2287-2322",
+    pages = "2287--2322",
     year = "2010"
   ),
-  softimpute = bibentry("manual",
-    title = "\\code{softImpute}: Matrix Completion via Iterative Soft-Thresholded SVD",
+  softimpute = bibentry(
+    "manual",
+    title = "softImpute: Matrix Completion via Iterative Soft-Thresholded SVD",
     author = "Trevor Hastie and Rahul Mazumder",
     year = "2021",
     note = "R package version 1.4-1",
-    url = "https://CRAN.R-project.org/package=softImpute"
+    url = "https://CRAN.R-project.org/package=softImpute",
+    doi = "10.32614/CRAN.package.softImpute"
   ),
-  meng2023mogsa = bibentry("manual",
-    title = "\\code{mogsa}: Multiple omics data integrative clustering and gene set analysis",
+  meng2023mogsa = bibentry(
+    "manual",
+    title = "mogsa: Multiple omics data integrative clustering and gene set analysis",
     author = "Chen Meng",
     year = "2023",
-    url = "https://bioconductor.org/packages/mogsa"
+    url = "https://bioconductor.org/packages/mogsa",
+    doi = "10.18129/B9.bioc.mogsa"
   ),
-  swihart2010lasagna = bibentry("article",
+  swihart2010lasagna = bibentry(
+    "article",
     title = "Lasagna plots: a saucy alternative to spaghetti plots",
     author = "Swihart, Bruce J and Caffo, Brian and James, Bryan D and Strand, Matthew and Schwartz, Brian S and Punjabi, Naresh M",
     journal = "Epidemiology (Cambridge, Mass.)",
@@ -49,5 +68,118 @@ bibentries <- c(
     pages = "621--625",
     year = "2010",
     publisher = "NIH Public Access"
+  ),
+  tucker2013generative = bibentry(
+    "article",
+    title = "Generative models for functional data using phase and amplitude separation",
+    author = "J. Derek Tucker and Wei Wu and Anuj Srivastava",
+    journal = "Computational Statistics & Data Analysis",
+    volume = "61",
+    pages = "50-66",
+    year = "2013",
+    issn = "0167-9473",
+    doi = "10.1016/j.csda.2012.12.001",
+    url = "https://www.sciencedirect.com/science/article/pii/S0167947312004227"
+  ),
+  srivastava2011registration = bibentry(
+    "misc",
+    title = "Registration of Functional Data Using Fisher-Rao Metric",
+    author = "Anuj Srivastava and Wei Wu and Sebastian Kurtek and Eric Klassen and J. S. Marron",
+    year = "2011",
+    eprint = "1103.3817",
+    archivePrefix = "arXiv",
+    primaryClass = "math.ST",
+    url = "https://arxiv.org/abs/1103.3817",
+  ),
+  ramsay2009functional = bibentry(
+    "book",
+    title = "Functional Data Analysis with R and MATLAB",
+    author = "Ramsay, James O. and Hooker, Giles and Graves, Spencer",
+    year = "2009",
+    edition = "1",
+    publisher = "Springer New York",
+    address = "New York",
+    series = "Use R!",
+    pages = "XII, 202",
+    isbn = "978-0-387-98184-0",
+    doi = "10.1007/978-0-387-98185-7",
+  ),
+  ramsay2005functional = bibentry(
+    "book",
+    title = "Functional Data Analysis",
+    author = "Ramsay, James O. and Silverman, Bernard W.",
+    year = "2005",
+    edition = "2nd",
+    publisher = "Springer",
+    address = "New York",
+    series = "Springer Series in Statistics",
+    isbn = "978-0-387-40080-8",
+  ),
+  ramsay2002applied = bibentry(
+    "book",
+    title = "Applied Functional Data Analysis",
+    author = "Ramsay, James O. and Silverman, Bernard W.",
+    year = "2002",
+    publisher = "Springer"
+  ),
+  tuddenham1954physical = bibentry(
+    "article",
+    title = "Physical growth of California boys and girls from birth to eighteen years",
+    author = "Tuddenham, Read D",
+    journal = "University of California Publications in Child Development",
+    volume = "1",
+    pages = "183--364",
+    year = "1954"
+  ),
+  olshen1989gait = bibentry(
+    "article",
+    title = "Gait Analysis and the Bootstrap",
+    author = "Olshen, Richard A and Biden, Edmund N and Wyatt, Marilynn P and Sutherland, David H",
+    journal = "The Annals of Statistics",
+    volume = "17",
+    number = "4",
+    pages = "1419--1440",
+    year = "1989",
+    publisher = "Institute of Mathematical Statistics"
+  ),
+  fornberg1988generation = bibentry(
+    "article",
+    title = "Generation of Finite Difference Formulas on Arbitrarily Spaced Grids",
+    author = "Fornberg, Bengt",
+    journal = "Mathematics of Computation",
+    volume = "51",
+    number = "184",
+    pages = "699--706",
+    year = "1988",
+    publisher = "American Mathematical Society"
+  ),
+  fraiman2001trimmed = bibentry(
+    "article",
+    title = "Trimmed means for functional data",
+    author = "Fraiman, Ricardo and Muniz, Graciela",
+    journal = "Test",
+    volume = "10",
+    number = "2",
+    pages = "419--440",
+    year = "2001",
+    publisher = "Springer"
+  ),
+  chakraborty2014spatial = bibentry(
+    "article",
+    title = "The spatial distribution in infinite dimensional spaces and related quantiles and depths",
+    author = "Chakraborty, Anirvan and Chaudhuri, Probal",
+    journal = "The Annals of Statistics",
+    volume = "42",
+    number = "3",
+    pages = "1203--1231",
+    year = "2014",
+    publisher = "Institute of Mathematical Statistics"
+  ),
+  bocinec2026rpd = bibentry(
+    "article",
+    title = "Projection depth for functional data: Practical issues, computation and applications",
+    author = "Bo\\v{c}inec, Filip and Nagy, Stanislav and Yeon, Hyemin",
+    journal = "arXiv preprint arXiv:2602.22877",
+    year = "2026"
   )
 )

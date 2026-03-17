@@ -8,7 +8,11 @@
 [![Lifecycle:
 experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
 [![codecov.io](https://codecov.io/github/tidyfun/tf/coverage.svg?branch=main)](https://app.codecov.io/github/tidyfun/tf/branch/main/)
-[![R-CMD-check](https://github.com/tidyfun/tf/actions/workflows/full-check.yaml/badge.svg)](https://github.com/tidyfun/tf/actions/workflows/full-check.yaml)
+[![R-CMD-check](https://github.com/tidyfun/tf/actions/workflows/quick-check.yaml/badge.svg)](https://github.com/tidyfun/tf/actions/workflows/quick-check.yaml)
+[![CRAN
+status](https://www.r-pkg.org/badges/version/tf)](https://CRAN.R-project.org/package=tf)
+[![R-universe
+version](https://tidyfun.r-universe.dev/tf/badges/version)](https://tidyfun.r-universe.dev/tf)
 <!-- badges: end -->
 
 The **`tf`** package provides necessary infrastructure for
@@ -25,7 +29,8 @@ subclasses `tfd` and `tfb`, use the
 [**`vctrs`**](https://vctrs.r-lib.org/)-framework, can be operated on
 using most standard functions (`+`, `mean()`, `c()`, etc.) as well as
 several new functions in `tf` that implement operations specific for
-*functional* data (`tf_smooth`, `tf_derive`, `tf_integrate`).
+*functional* data (`tf_smooth`, `tf_derive`, `tf_integrate`,
+`tf_register`, …).
 
 **Crucially**, vectors of class `tf` can be included in data frames
 containing other variables, for simple and reliable data manipulation.
@@ -37,9 +42,17 @@ frame.
 
 ## Installation
 
-You can install the latest release from GitHub with:
+You can install the released version of **tf** from
+[CRAN](https://CRAN.R-project.org) with:
 
 ``` r
+install.packages("tf")
+```
+
+And the development version from [GitHub](https://github.com/) with:
+
+``` r
+# install.packages("pak")
 pak::pak("tidyfun/tf")
 ```
 
@@ -50,6 +63,8 @@ pak::pak("tidyfun/tf")
 - new **data types** for representing functional data: `tfd` & `tfb`
 - arithmetic **operators** and descriptive **statistics** for such data
 - basic **graphics** functions for `tf` vectors
+- derivatives and integrals of `tf`-objects
+- registration (alignment) of `tf`-objects
 - basic data **wrangling** for functional data: reshaping from list
   columns to wide to long and back, interpolating on different grids,
   filtering and zooming, etc.

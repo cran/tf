@@ -79,9 +79,9 @@ is_tfb_spline(x)
 is_tfb_fpc(x)
 }
 \arguments{
-\item{f}{an \code{tf} object}
+\item{f}{an \code{tf} object.}
 
-\item{x}{an \code{tf} object}
+\item{x}{an \code{tf} object.}
 
 \item{value}{\strong{for \verb{tf_evaluator<-}:} (bare or quoted) name of a function
 that can be used to interpolate an \code{tfd}. Needs to accept vector arguments
@@ -106,6 +106,23 @@ the input object with modified properties.
 \description{
 A bunch of methods & utilities that do what they say: get or set the
 respective attributes of a \code{tf}-object.
+}
+\examples{
+x <- tf_rgp(3)
+tf_arg(x)
+tf_evaluations(x)
+tf_count(x)
+tf_domain(x)
+tf_evaluator(x)
+tf_evaluate(x, 0.25)
+tf_evaluator(x) <- tf_approx_none
+tf_evaluate(x, 0.25)
+c(is_tf(x), is_tfd(x), is_reg(x), is_irreg(x))
+
+xb <- tfb(x, k = 4, penalized = FALSE, verbose = FALSE)
+tf_basis(xb)
+tf_basis(xb)(c(0, .1, .2))
+c(is_tfb(xb), is_tfb_spline(xb), is_tfb_fpc(xb))
 }
 \seealso{
 Other tidyfun utility functions: 

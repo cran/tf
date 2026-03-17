@@ -7,32 +7,38 @@
 \usage{
 tf_jiggle(f, amount = 0.4, ...)
 
-tf_sparsify(f, dropout = 0.5, ...)
+tf_sparsify(f, dropout = 0.5)
 }
 \arguments{
-\item{f}{a \code{tfd} object}
+\item{f}{a \code{tfd} object.}
 
-\item{amount}{how far away from original grid points can the new grid points
+\item{amount}{how far away from original grid points can the jiggled grid points
 lie, at most (relative to original distance to neighboring grid points).
 Defaults to at most 40\% (0.4) of the original grid distances. Must be lower
-than 0.5}
+than 0.5.}
 
-\item{...}{additional args for the returned \code{tfd} in \code{tf_jiggle}}
+\item{...}{additional args for the returned \code{tfd} in \code{tf_jiggle}.}
 
-\item{dropout}{how many values of \code{f} to drop, defaults to 50\%.}
+\item{dropout}{what proportion of values of \code{f} to drop, on average. Defaults to half.}
 }
 \value{
-an (irregular) \code{tfd} object
+an (irregular) \code{tfd} object.
 }
 \description{
 Randomly create some irregular functional data from regular ones.
-\strong{jiggle} it by randomly moving around its \code{arg}-values. Only for \code{tfd}.
-\strong{sparsify} it by setting (100*\code{dropout})\% of its values to \code{NA}.
+\itemize{
+\item \strong{jiggle} it by randomly moving around its \code{arg}-values inside the intervals defined by its grid neighbors on the original argument grid.
+\item \strong{sparsify} it by removing (100*\code{dropout})\% of the function values
+}
+}
+\examples{
+set.seed(1)
+(x <- tf_rgp(2, arg = 21L))
+(x_jig <- tf_jiggle(x, amount = 0.2))
+(x_sp <- tf_sparsify(x, dropout = 0.3))
+c(is_irreg(x_jig), is_irreg(x_sp))
 }
 \seealso{
-Other tidyfun RNG functions: 
-\code{\link{tf_rgp}()}
-
 Other tidyfun RNG functions: 
 \code{\link{tf_rgp}()}
 }

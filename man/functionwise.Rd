@@ -12,7 +12,7 @@
 \alias{tf_fsd}
 \alias{tf_crosscov}
 \alias{tf_crosscor}
-\title{Summarize each \code{tf} in a vector}
+\title{Summarize each \code{tf} in a vector (function-wise)}
 \usage{
 tf_fwise(x, .f, arg = tf_arg(x), ...)
 
@@ -35,31 +35,31 @@ tf_crosscov(x, y, arg = tf_arg(x))
 tf_crosscor(x, y, arg = tf_arg(x))
 }
 \arguments{
-\item{x}{a \code{tf} object}
+\item{x}{a \code{tf} object.}
 
 \item{.f}{a function or formula that is applied to each entry of \code{x}, see
-\code{\link[purrr:as_mapper]{purrr::as_mapper()}} and Details.}
+\code{\link[purrr:as_mapper]{purrr::as_mapper()}} and details.}
 
-\item{arg}{defaults to standard argument values of \code{x}}
+\item{arg}{defaults to standard argument values of \code{x}.}
 
-\item{...}{additional arguments for \code{\link[purrr:as_mapper]{purrr::as_mapper()}}}
+\item{...}{additional arguments for \code{\link[purrr:as_mapper]{purrr::as_mapper()}}.}
 
-\item{na.rm}{a logical indicating whether missing values should be
-    removed.}
+\item{na.rm}{a logical (\code{TRUE} or \code{FALSE}) indicating
+    whether missing values should be removed.}
 
 \item{finite}{logical, indicating if all non-finite elements should
     be omitted.}
 
-\item{y}{a \code{tf} object}
+\item{y}{a \code{tf} object.}
 }
 \value{
 a list (or vector) of the same length as \code{x} with the respective
-summaries
+summaries.
 }
 \description{
 These functions extract (user-specified) \strong{function-wise} summary statistics
-from each entry in a  \code{tf}-vector. To summarize a vector of functions at each
-argument value, see \code{?tfsummaries}. Note that these will tend to yield lots
+from every entry in a  \code{tf}-vector. To summarize a vector of functions at each
+argument value, see \code{?tfsummaries}. Note that most of these will tend to yield lots
 of \code{NA}s for irregular \code{tfd} unless you set a \code{\link[=tf_evaluator]{tf_evaluator()}}-function
 that does inter- and extrapolation for them beforehand.
 }
@@ -67,7 +67,7 @@ that does inter- and extrapolation for them beforehand.
 \code{tf_fwise} turns \code{x} into a list of data.frames with columns \code{arg}
 and \code{values} internally, so the function/formula in \code{.f} gets a data.frame
 \code{.x} with these columns, see examples below or source code for \code{\link[=tf_fmin]{tf_fmin()}},
-\code{\link[=tf_fmax]{tf_fmax()}}, etc
+\code{\link[=tf_fmax]{tf_fmax()}}, etc.
 }
 \section{Functions}{
 \itemize{
@@ -110,15 +110,16 @@ tf_fvar(x_std) == c(1, 1, 1)
 plot(x_std, col = 1:3)
 # Custom functions:
 # 80\%tiles of each function's values:
-tf_fwise(x, ~ quantile(.x$value, .8)) |> unlist()
-# minimal value of each function for t >.5
-tf_fwise(x, ~ min(.x$value[.x$arg > .5])) |> unlist()
+tf_fwise(x, \(.x) quantile(.x$value, 0.8)) |> unlist()
+# minimal value of each function for t > 0.5
+tf_fwise(x, \(.x) min(.x$value[.x$arg > 0.5])) |> unlist()
 
 tf_crosscor(x, -x)
 tf_crosscov(x, x) == tf_fvar(x)
 }
 \seealso{
 Other tidyfun summary functions: 
+\code{\link{fivenum}()},
 \code{\link{tfsummaries}}
 }
 \concept{tidyfun summary functions}

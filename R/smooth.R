@@ -17,11 +17,11 @@
 #'   - **`savgol`** uses a window size of `k` = $<$number of
 #'   grid points$>$/10 (i.e., the nearest odd integer to that).
 #'
-#' @param x a `tf` object containing functional data
-#' @param method one of "lowess" (see [stats::lowess()]), "rollmean",
-#'   "rollmedian" (see [zoo::rollmean()]) or "savgol" (see [pracma::savgol()])
-#' @param verbose give lots of diagnostic messages? Defaults to TRUE
-#' @param ... arguments for the respective `method`. See Details.
+#' @param x a `tf` object containing functional data.
+#' @param method one of `"lowess"` (see [stats::lowess()]), `"rollmean"`,
+#'   `"rollmedian"` (see [zoo::rollmean()]) or `"savgol"` (see [pracma::savgol()]).
+#' @param verbose give lots of diagnostic messages? Defaults to `TRUE`.
+#' @param ... arguments for the respective `method`. See details.
 #' @returns a smoothed version of the input. For some methods/options, the
 #'   smoothed functions may be shorter than the original ones (at both ends).
 #' @export
@@ -33,19 +33,17 @@ tf_smooth <- function(x, ...) {
 #' @export
 #' @rdname tf_smooth
 tf_smooth.tfb <- function(x, verbose = TRUE, ...) {
-  if (verbose) warning(
-    "you called tf_smooth on a tfb object, not on a tfd object -- ",
-    "just use a smaller basis or stronger penalization.\n",
-    "Returning unchanged tfb object.",
-    call. = FALSE
-  )
+  if (verbose) {
+    cli::cli_inform(c(
+      `!` = "You called {.fn tf_smooth} on a {.cls tfb} object, not on a {.cls tfd} object --
+       just use a smaller basis or stronger penalization.",
+      i = "Returning unchanged {.cls tfb} object."
+    ))
+  }
   x
 }
 
-#' @importFrom stats lowess
-#' @importFrom zoo rollmean rollmedian
 #' @importFrom pracma savgol
-#' @importFrom stats lowess
 #' @rdname tf_smooth
 #' @export
 #' @examples
@@ -55,7 +53,7 @@ tf_smooth.tfb <- function(x, verbose = TRUE, ...) {
 #' f_lowess <- tf_smooth(f, "lowess")
 #' # these methods ignore the distances between arg-values:
 #' f_mean <- tf_smooth(f, "rollmean")
-#' f_median <- tf_smooth(f, "rollmean", k = 31)
+#' f_median <- tf_smooth(f, "rollmedian", k = 31)
 #' f_sg <- tf_smooth(f, "savgol", fl = 31)
 #' layout(t(1:4))
 #' plot(f, points = FALSE, main = "original")
@@ -67,57 +65,74 @@ tf_smooth.tfb <- function(x, verbose = TRUE, ...) {
 #'   points = FALSE, col = "blue", main = "rolling means &\n medians (red)"
 #' )
 #' lines(f_median, col = "red", alpha = 0.2) # note constant extrapolation at both ends!
-#' plot(f, points = FALSE, main = "orginal and\n savgol (red)")
+#' plot(f, points = FALSE, main = "original and\n savgol (red)")
 #' lines(f_sg, col = "red")
-tf_smooth.tfd <- function(x,
-                          method = c("lowess", "rollmean", "rollmedian", "savgol"),
-                          verbose = TRUE, ...) {
+tf_smooth.tfd <- function(
+  x,
+  method = c("lowess", "rollmean", "rollmedian", "savgol"),
+  verbose = TRUE,
+  ...
+) {
   method <- match.arg(method)
   smoother <- get(method, mode = "function")
   dots <- list(...)
+  nas <- is.na(x)
+  x_evals <- tf_evaluations(x)[!nas]
   # nocov start
   if (method %in% c("savgol", "rollmean", "rollmedian")) {
-    if (verbose & !is_equidist(x)) {
-      warning(
-        "non-equidistant arg-values in ", sQuote(deparse(substitute(x))),
-        " ignored by ", method, ".",
-        call. = FALSE
-      )
+    if (verbose && !is_equidist(x)) {
+      cli::cli_inform(c(
+        x = "Non-equidistant arg-values in {.arg x} ignored by {.val {method}}."
+      ))
     }
-    if (grepl("rollm", method, fixed = TRUE)) {
+    if (startsWith(method, "rollm")) {
       if (is.null(dots$k)) {
         dots$k <- ceiling(0.05 * min(tf_count(x)))
         dots$k <- dots$k + !(dots$k %% 2) # make uneven
-        if (verbose) message("using k = ", dots$k, " observations for rolling data window.")
+        if (verbose)
+          cli::cli_inform(
+            "Using {.code k = {dots$k}} observations for rolling data window."
+          )
       }
       if (is.null(dots$fill)) {
-        if (verbose) message("setting fill = 'extend' for start/end values.")
+        if (verbose)
+          cli::cli_inform(
+            "Setting {.code fill = 'extend'} for start/end values."
+          )
         dots$fill <- "extend"
       }
-    }
-    if (method == "savgol") {
-      if (is.null(dots$fl)) {
-        dots$fl <- ceiling(0.15 * min(tf_count(x)))
-        dots$fl <- dots$fl + !(dots$fl %% 2) # make uneven
-        if (verbose) message("using fl = ", dots$fl, " observations for rolling data window.")
-      }
+    } else if (is.null(dots$fl)) {
+      dots$fl <- ceiling(0.15 * min(tf_count(x)))
+      dots$fl <- dots$fl + !(dots$fl %% 2) # make uneven
+      if (verbose)
+        cli::cli_inform(
+          "Using {.code fl = {dots$fl}} observations for rolling data window."
+        )
     }
     smoothed <- map(
-      tf_evaluations(x), \(x) do.call(smoother, append(list(x), dots))
+      x_evals,
+      \(x) do.call(smoother, append(list(x), dots))
     )
   }
   # nocov end
   if (method == "lowess") {
     if (is.null(dots$f)) {
       dots$f <- 0.15
-      if (verbose) message("using f = ", dots$f, " as smoother span for lowess")
+      if (verbose)
+        cli::cli_inform(
+          "Using {.code f = {dots$f}} as smoother span for {.fn lowess}."
+        )
     }
     smoothed <- map(
-      tf_evaluations(x), \(x) do.call(smoother, append(list(x), dots))$y
+      x_evals,
+      \(x) do.call(smoother, append(list(x), dots))$y
     )
   }
-
-  tfd(smoothed, tf_arg(x),
+  x_smoothed <- vector(length(x), mode = "list")
+  x_smoothed[!nas] <- smoothed
+  tfd(
+    x_smoothed,
+    tf_arg(x),
     evaluator = !!attr(x, "evaluator_name"),
     domain = tf_domain(x)
   )

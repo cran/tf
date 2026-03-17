@@ -4,6 +4,7 @@
 \alias{tf_derive}
 \alias{tf_derive.matrix}
 \alias{tf_derive.tfd}
+\alias{tf_derive.tfd_irreg}
 \alias{tf_derive.tfb_spline}
 \alias{tf_derive.tfb_fpc}
 \title{Differentiating functional data: approximating derivative functions}
@@ -12,56 +13,76 @@ tf_derive(f, arg, order = 1, ...)
 
 \method{tf_derive}{matrix}(f, arg, order = 1, ...)
 
-\method{tf_derive}{tfd}(f, arg, order = 1, ...)
+\method{tf_derive}{tfd}(f, arg = tf_arg(f), order = 1, ...)
 
-\method{tf_derive}{tfb_spline}(f, arg, order = 1, ...)
+\method{tf_derive}{tfd_irreg}(f, arg, order = 1, ...)
 
-\method{tf_derive}{tfb_fpc}(f, arg, order = 1, ...)
+\method{tf_derive}{tfb_spline}(f, arg = tf_arg(f), order = 1, ...)
+
+\method{tf_derive}{tfb_fpc}(f, arg = tf_arg(f), order = 1, ...)
 }
 \arguments{
 \item{f}{a \code{tf}-object}
 
-\item{arg}{grid to use for the finite differences.
-Not the \code{arg} of the returned object for \code{tfd}-inputs, see Details.}
+\item{arg}{grid to use for the finite differences.}
 
-\item{order}{order of differentiation. Maximal value for \code{tfb_spline} is 2.}
+\item{order}{order of differentiation. Maximal value for \code{tfb_spline} is 2.
+For \code{tfb_spline}-objects, \code{order = -1} yields integrals (used internally).}
 
 \item{...}{not used}
 }
 \value{
-a \code{tf} (with slightly different \code{arg} or \code{basis} for the
-derivatives, see Details)
+a \code{tf} (with the same \code{arg} for \code{tfd}-inputs, possibly different
+\code{basis} for \code{tfb}-inputs, see details).
 }
 \description{
 Derivatives of \code{tf}-objects use finite differences of the evaluations for
 \code{tfd} and finite differences of the basis functions for \code{tfb}.
 }
 \details{
-The derivatives of \code{tfd} objects use centered finite differences, e.g. for
-first derivatives \eqn{f'((t_i + t_{i+1})/2) \approx \frac{f(t_i) +
-f(t_{i+1})}{t_{i+1} - t_i}}, so the \strong{domains of differentiated \code{tfd} will
-shrink (slightly) at both ends}. Unless the \code{tfd} has a rather fine and
-regular grid, representing the data in a suitable basis representation with
-\code{\link[=tfb]{tfb()}} and then computing the derivatives or integrals of those is usually
-preferable.
+The derivatives of \code{tfd} objects use second-order accurate central differences
+for interior points and second-order accurate one-sided differences at
+boundaries, following the non-uniform grid formulas from \code{numpy.gradient}
+with \code{edge_order=2} (Fornberg, 1988).
+Domain and grid of the returned object are identical to the input. Unless the
+\code{tfd} has a rather fine and regular grid, representing the data in a suitable
+basis representation with \code{\link[=tfb]{tfb()}} and then computing the derivatives (or
+integrals) of those is usually preferable.
 
-Note that, for some spline bases like \code{"cr"} or \code{"tp"} which always begin/end
-linearly, computing second derivatives will produce artefacts at the outer
-limits of the functions' domain due to these boundary constraints. Basis
-\code{"bs"} does not have this problem for sufficiently high orders, but tends to
-yield slightly less stable fits.
+Note that, for spline bases like \code{"cr"} or \code{"tp"} which are constrained to
+begin/end linearly, computing \emph{second} derivatives will produce artefacts at
+the outer limits of the functions' domain due to these boundary constraints.
+Basis \code{"bs"} does not have this problem for sufficiently high orders (but
+tends to yield slightly less stable fits).
 }
 \section{Methods (by class)}{
 \itemize{
 \item \code{tf_derive(matrix)}: row-wise finite differences
 
-\item \code{tf_derive(tfd)}: derivatives by finite differencing.
+\item \code{tf_derive(tfd)}: derivatives by finite differencing of function evaluations.
 
-\item \code{tf_derive(tfb_spline)}: derivatives by finite differencing.
+\item \code{tf_derive(tfd_irreg)}: element-wise finite differencing for irregular grids.
+Falls back to \code{tf_derive.tfd} (interpolating to a common grid) if an
+explicit \code{arg} vector is supplied.
 
-\item \code{tf_derive(tfb_fpc)}: derivatives by finite differencing.
+\item \code{tf_derive(tfb_spline)}: derivatives by finite differencing of spline basis functions.
+
+\item \code{tf_derive(tfb_fpc)}: derivatives by finite differencing of FPC basis functions.
 
 }}
+\examples{
+arg <- seq(0, 1, length.out = 31)
+x <- tfd(rbind(arg^2, sin(2 * pi * arg)), arg = arg)
+dx <- tf_derive(x)
+x
+dx
+tf_arg(dx)
+}
+\references{
+Fornberg, Bengt (1988).
+\dQuote{Generation of Finite Difference Formulas on Arbitrarily Spaced Grids.}
+\emph{Mathematics of Computation}, \bold{51}(184), 699--706.
+}
 \seealso{
 Other tidyfun calculus functions: 
 \code{\link{tf_integrate}()}

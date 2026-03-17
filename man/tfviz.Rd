@@ -28,30 +28,30 @@
 )
 }
 \arguments{
-\item{x}{an \code{tf} object}
+\item{x}{an \code{tf} object.}
 
 \item{y}{(optional) numeric vector to be used as \code{arg}
-(i.e., for the \strong{x}-axis...!)}
+(i.e., for the \strong{x}-axis...!).}
 
 \item{n_grid}{minimal size of equidistant grid used for plotting,
-defaults to 50. See details.}
+defaults to \code{50}. See details.}
 
 \item{points}{should the original evaluation points be marked by points?
-Defaults to \code{TRUE} for irregular \code{tfd} and FALSE for all others}
+Defaults to \code{TRUE} for irregular \code{tfd} and \code{FALSE} for all others.}
 
-\item{type}{"spaghetti": line plots, "lasagna": heat maps.}
+\item{type}{\code{"spaghetti"}: line plots, \code{"lasagna"}: heat maps.}
 
-\item{alpha}{alpha-value (see\code{\link[grDevices:rgb]{grDevices::rgb()}}) for noodle transparency.
+\item{alpha}{alpha-value (see \code{\link[grDevices:rgb]{grDevices::rgb()}}) for noodle transparency.
 Defaults to 2/(no. of observations). Lower is more transparent.}
 
-\item{...}{additional arguments for \code{\link[=matplot]{matplot()}} ("spaghetti") or
-\code{\link[=image]{image()}} ("lasagna")}
+\item{...}{additional arguments for \code{\link[graphics:matplot]{graphics::matplot()}} ("spaghetti") or
+\code{\link[=image]{image()}} ("lasagna").}
 
-\item{arg}{evaluation grid (vector)}
+\item{arg}{evaluation grid (vector).}
 
 \item{interpolate}{should functions be evaluated (i.e., inter-/extrapolated)
 for arg for which no original data is available? Only relevant for
-tfd, defaults to FALSE}
+tfd, defaults to \code{FALSE}.}
 }
 \value{
 the plotted \code{tf}-object, invisibly.
@@ -66,6 +66,11 @@ are given by the union of the \code{tf}'s \code{arg} and an equidistant grid
 over its domain with \code{n_grid} points. If you want to only see the original
 data for \code{tfd}-objects without inter-/extrapolation, use \code{n_grid < 1} or
 \code{n_grid = NA}.
+}
+\examples{
+f <- tfd(sin(seq(0, 2 * pi, length.out = 51)), arg = seq(0, 1, length.out = 51))
+plot(f)
+plot(c(f, 2 * f), type = "lasagna")
 }
 \references{
 Swihart, J B, Caffo, Brian, James, D B, Strand, Matthew, Schwartz, S B, Punjabi, M N (2010).

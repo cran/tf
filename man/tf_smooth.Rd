@@ -18,14 +18,14 @@ tf_smooth(x, ...)
 )
 }
 \arguments{
-\item{x}{a \code{tf} object containing functional data}
+\item{x}{a \code{tf} object containing functional data.}
 
-\item{...}{arguments for the respective \code{method}. See Details.}
+\item{...}{arguments for the respective \code{method}. See details.}
 
-\item{verbose}{give lots of diagnostic messages? Defaults to TRUE}
+\item{verbose}{give lots of diagnostic messages? Defaults to \code{TRUE}.}
 
-\item{method}{one of "lowess" (see \code{\link[stats:lowess]{stats::lowess()}}), "rollmean",
-"rollmedian" (see \code{\link[zoo:rollmean]{zoo::rollmean()}}) or "savgol" (see \code{\link[pracma:savgol]{pracma::savgol()}})}
+\item{method}{one of \code{"lowess"} (see \code{\link[stats:lowess]{stats::lowess()}}), \code{"rollmean"},
+\code{"rollmedian"} (see \code{\link[zoo:rollmean]{zoo::rollmean()}}) or \code{"savgol"} (see \code{\link[pracma:savgol]{pracma::savgol()}}).}
 }
 \value{
 a smoothed version of the input. For some methods/options, the
@@ -57,7 +57,7 @@ f <- tf_sparsify(tf_jiggle(tf_rgp(4, 201, nugget = 0.05)))
 f_lowess <- tf_smooth(f, "lowess")
 # these methods ignore the distances between arg-values:
 f_mean <- tf_smooth(f, "rollmean")
-f_median <- tf_smooth(f, "rollmean", k = 31)
+f_median <- tf_smooth(f, "rollmedian", k = 31)
 f_sg <- tf_smooth(f, "savgol", fl = 31)
 layout(t(1:4))
 plot(f, points = FALSE, main = "original")
@@ -69,7 +69,7 @@ plot(f_mean,
   points = FALSE, col = "blue", main = "rolling means &\n medians (red)"
 )
 lines(f_median, col = "red", alpha = 0.2) # note constant extrapolation at both ends!
-plot(f, points = FALSE, main = "orginal and\n savgol (red)")
+plot(f, points = FALSE, main = "original and\n savgol (red)")
 lines(f_sg, col = "red")
 }
 \concept{tidyfun nonparametric smoothers}

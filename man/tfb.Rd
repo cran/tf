@@ -6,7 +6,7 @@
 \alias{as.tfb}
 \title{Constructors for functional data in basis representation}
 \usage{
-tfb(data = data.frame(), basis = c("spline", "fpc", "wavelet"), ...)
+tfb(data = data_frame0(), basis = c("spline", "fpc", "wavelet"), ...)
 
 tfb_wavelet(data, ...)
 
@@ -20,11 +20,11 @@ as.tfb(data, basis = c("spline", "fpc"), ...)
 (see \code{\link[=tfb_fpc]{tfb_fpc()}}).
 (\code{wavelet} not implemented yet)}
 
-\item{...}{further arguments for \code{\link[=tfb_spline]{tfb_spline()}} or \code{\link[=tfb_fpc]{tfb_fpc()}}}
+\item{...}{further arguments for \code{\link[=tfb_spline]{tfb_spline()}} or \code{\link[=tfb_fpc]{tfb_fpc()}}.}
 }
 \value{
 a \code{tfb}-object (or a \code{data.frame}/\code{matrix} for the conversion
-functions, obviously.)
+functions, obviously).
 }
 \description{
 Various constructors for \code{tfb}-vectors from different kinds of inputs.
@@ -43,6 +43,14 @@ operator of the \eqn{x(t)} (\code{fpc}) or wavelets (\code{wavelet}).
 See \strong{\code{\link[=tfb_spline]{tfb_spline()}}} for more details on spline basis representation (the
 default). See \strong{\code{\link[=tfb_fpc]{tfb_fpc()}}} for using an functional principal component
 representation with an orthonormal basis estimated from the data instead.
+}
+\examples{
+arg <- seq(0, 1, length.out = 21)
+x <- tfd(rbind(sin(2 * pi * arg), cos(2 * pi * arg)), arg = arg)
+xb <- tfb(x, k = 8, penalized = FALSE)
+xb
+
+as.tfb(x, basis = "spline", k = 8)
 }
 \seealso{
 Other tfb-class: 

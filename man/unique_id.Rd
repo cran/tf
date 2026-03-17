@@ -7,13 +7,16 @@
 unique_id(x)
 }
 \arguments{
-\item{x}{any input}
+\item{x}{any input.}
 }
 \value{
 \code{x} turned into a list.
 }
 \description{
 See above.
+}
+\examples{
+unique_id(c("a", "b", "a"))
 }
 \seealso{
 Other tidyfun developer tools: 

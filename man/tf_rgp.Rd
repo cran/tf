@@ -7,25 +7,27 @@
 tf_rgp(
   n,
   arg = 51L,
-  cov = c("squareexp", "wiener", "matern"),
-  scale = diff(range(arg))/10,
+  cov = c("squareexp", "wiener", "matern", "brown_bridge"),
+  scale = diff(domain)/10,
   nugget = scale/200,
-  order = 1.5
+  order = 1.5,
+  domain = NULL
 )
 }
 \arguments{
-\item{n}{how many realizations to draw}
+\item{n}{how many realizations to draw.}
 
 \item{arg}{vector of evaluation points (\code{arg} of the return object). Defaults
 to (0, 0.02, 0.04, ..., 1). If given as a single \strong{integer} (don't forget
-the \strong{\code{L}}...), creates a  regular grid of that length over (0,1).}
+the \strong{\code{L}}...), creates a  regular grid of that length over (0,1).
+If given as a \code{n}-long list of vectors, irregular functional data are created.}
 
 \item{cov}{type of covariance function to use. Implemented defaults are
-\code{"squareexp"}, \code{"wiener"}, \code{"matern"}, see Description. Can also be any
+\code{"squareexp"}, \code{"wiener"}, \code{"matern"}, see description. Can also be any
 vectorized function returning \eqn{Cov(x(t), x(t'))} \emph{without nugget
 effect} for pairs of inputs t and t'.}
 
-\item{scale}{scale parameter (see Description). Defaults to the width of the
+\item{scale}{scale parameter (see description). Defaults to the width of the
 domain divided by 10.}
 
 \item{nugget}{nugget effect for additional white noise / unstructured
@@ -35,9 +37,12 @@ variability. Defaults to \code{scale/200} (so: very little white noise).}
 to 1.5. The higher, the smoother the process. Evaluation of the covariance
 function becomes numerically unstable for large (>20) \code{order}, use
 "squareexp".}
+
+\item{domain}{of the generated functions. If not provided, the range of the
+supplied \code{arg} values.}
 }
 \value{
-an \code{tfd}-vector of length \code{n}
+an \code{tfd}-vector of length \code{n}.
 }
 \description{
 Generates \code{n} realizations of a zero-mean Gaussian process. The function also
@@ -45,15 +50,22 @@ accepts user-defined covariance functions (without "nugget" effect, see
 \code{cov}), The implemented defaults with \code{scale} parameter \eqn{\phi}, \code{order}
 \eqn{o} and \code{nugget} effect variance \eqn{\sigma^2} are:
 \itemize{
-\item \emph{squared exponential} covariance \eqn{Cov(x(t), x(t')) = \exp(-(t-t')^2)/\phi) + \sigma^2
+\item \emph{squared exponential}: \eqn{Cov(x(t), x(t')) = \exp(-(t-t')^2)/\phi) + \sigma^2
 \delta_{t}(t')}.
-\item \emph{Wiener} process covariance \eqn{Cov(x(t), x(t')) =
+\item \emph{Wiener} process: \eqn{Cov(x(t), x(t')) =
 \min(t',t)/\phi + \sigma^2 \delta_{t}(t')},
-\item \href{https://en.wikipedia.org/wiki/Mat\%C3\%A9rn_covariance_function#Definition}{\emph{Matèrn} process}
-covariance \eqn{Cov(x(t), x(t')) =
+\item \href{https://en.wikipedia.org/wiki/Mat\%C3\%A9rn_covariance_function#Definition}{\emph{Matèrn} process}:
+\eqn{Cov(x(t), x(t')) =
 \tfrac{2^{1-o}}{\Gamma(o)} (\tfrac{\sqrt{2o}|t-t'|}{\phi})^o \text{Bessel}_o(\tfrac{\sqrt{2o}|t-t'|}{s})
 + \sigma^2 \delta_{t}(t')}
+\item \href{https://en.wikipedia.org/wiki/Brownian_bridge}{\emph{Brownian Bridge} process} for
+\eqn{t, t' \in [a, b]}:
+\eqn{Cov(x(t), x(t')) =  \frac{(b - \max(s,t))(\min(s, t) - a)}{\phi (b - a)} + \sigma^2 \delta_{t}(t')}
 }
+}
+\examples{
+(x1 <- tf_rgp(10, cov = "squareexp", nugget = 0))
+tf_rgp(2, arg = list(sort(runif(25)), sort(runif(34))))
 }
 \seealso{
 Other tidyfun RNG functions: 

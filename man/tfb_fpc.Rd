@@ -41,9 +41,11 @@ Unless set by the user, uses proportion of variance explained
 \item{id}{The name or number of the column defining which data belong to
 which function.}
 
-\item{arg}{\code{numeric}, or list of \code{numeric}s. The evaluation grid.
+\item{arg}{For the \code{list}- and \code{matrix}-methods:
+\code{numeric}, or list of \code{numeric}s. The evaluation grid.
 For the \code{data.frame}-method: the
-name/number of the column defining the evaluation grid. The \code{matrix} method
+name/number of the column defining the evaluation grid.
+The \code{matrix} method
 will try to guess suitable \code{arg}-values from the column names of \code{data} if
 \code{arg} is not supplied. Other methods fall back on integer sequences
 (\verb{1:<length of data>}) as the default if not provided.}
@@ -55,7 +57,7 @@ evaluations.}
 
 \item{method}{the function to use that computes eigenfunctions and scores.
 Defaults to \code{\link[=fpc_wsvd]{fpc_wsvd()}}, which is quick and easy but returns completely
-unsmoothed eigenfunctions unlikely to be suited for noisy data. See Details.}
+unsmoothed eigenfunctions unlikely to be suited for noisy data. See details.}
 }
 \value{
 an object of class \code{tfb_fpc}, inheriting from \code{tfb}.
@@ -76,7 +78,7 @@ missingness.\cr
 For the FPC basis, any factorization method that accepts a \code{data.frame} with
 columns \code{id}, \code{arg}, \code{value} containing the functional data and returns a
 list with eigenfunctions and FPC scores structured like the return object
-of \code{\link[=fpc_wsvd]{fpc_wsvd()}} can be used for the `method`` argument, see example below.
+of \code{\link[=fpc_wsvd]{fpc_wsvd()}} can be used for the \code{method} argument, see example below.
 Note that the mean function, with a fixed "score" of 1 for all functions,
 is used as the first basis function for all FPC bases.
 }
@@ -87,6 +89,7 @@ data is NULL
 
 }}
 \examples{
+\dontshow{if (rlang::is_installed("refund")) withAutoprint(\{ # examplesIf}
 set.seed(13121)
 x <- tf_rgp(25, nugget = .02)
 x_pc <- tfb_fpc(x, pve = .9)
@@ -136,6 +139,7 @@ fpca_sc_wrapper <- function(data, arg, pve = 0.995, ...) {
 x_pc <- tfb_fpc(x_df, method = fpca_sc_wrapper)
 lines(x_pc, col = 2, lty = 2)
 }
+\dontshow{\}) # examplesIf}
 }
 \seealso{
 \code{\link[=fpc_wsvd]{fpc_wsvd()}} for FPCA options.
