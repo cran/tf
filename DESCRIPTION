@@ -1,6 +1,6 @@
 Package: tf
 Title: S3 Classes and Methods for Tidy Functional Data
-Version: 0.4.0
+Version: 0.4.1
 Authors@R: c(
     person("Fabian", "Scheipl", , "fabian.scheipl@googlemail.com", role = c("aut", "cre", "cph"),
            comment = c(ORCID = "0000-0001-8172-3603")),
@@ -33,7 +33,8 @@ BugReports: https://github.com/tidyfun/tf/issues
 Depends: R (>= 4.1)
 Imports: checkmate, cli, methods, mgcv, mvtnorm, pracma, purrr (>=
         1.0.0), rlang, stats, vctrs (>= 0.2.4), zoo
-Suggests: covr, dplyr, fda, fdasrvf, refund, testthat (>= 3.0.0), withr
+Suggests: covr, dplyr, fda, fdasrvf, pillar, refund, testthat (>=
+        3.0.0), withr
 Config/testthat/edition: 3
 Encoding: UTF-8
 LazyData: true
@@ -50,7 +51,7 @@ Collate: 'approx.R' 'assertions.R' 'bibentries.R' 'brackets.R'
         'utils.R' 'vctrs-cast.R' 'vctrs-ptype2.R' 'where.R' 'zoom.R'
         'zzz.R'
 NeedsCompilation: no
-Packaged: 2026-03-17 15:45:24 UTC; fabians
+Packaged: 2026-04-07 12:26:22 UTC; fabians
 Author: Fabian Scheipl [aut, cre, cph] (ORCID:
     <https://orcid.org/0000-0001-8172-3603>),
   Jeff Goldsmith [aut],
@@ -63,4 +64,4 @@ Author: Fabian Scheipl [aut, cre, cph] (ORCID:
   Chen Meng [ctb] (mogsa author)
 Maintainer: Fabian Scheipl <fabian.scheipl@googlemail.com>
 Repository: CRAN
-Date/Publication: 2026-03-17 17:00:02 UTC
+Date/Publication: 2026-04-07 13:00:02 UTC
